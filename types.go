@@ -39,7 +39,6 @@ func (s *scale) init(p Point) {
 			}
 		}
 	}
-	s.f = int16(0)
 }
 
 // Scaled specifies whether the point is scaled using an optional factor.
@@ -55,7 +54,7 @@ func (s *scale) Factor() int16 {
 	case Sunssf:
 		return sf.Get()
 	}
-	return 1
+	return 0
 }
 
 // ****************************************************************************
