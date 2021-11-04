@@ -4,9 +4,10 @@ import "errors"
 
 // Device describes a sunspec compliant device.
 type Device interface {
-	// Model returns the first model identifies by id.
+	// Model returns the first immediate model identified by id.
 	Model(id uint16) Model
 	// Models returns all models from the device.
+	// If ids are omitted all models are returned.
 	Models(ids ...uint16) Models
 }
 

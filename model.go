@@ -5,7 +5,7 @@ import (
 	"regexp"
 )
 
-// Model
+// Model defines a instantiated sunspec model.
 type Model interface {
 	// Group defines a sunspec container for points.
 	Group
@@ -41,7 +41,7 @@ func (def *ModelDef) ID() uint16 {
 	return def.Id
 }
 
-// Instance derives a new useable Model from the defintion.
+// Instance derives a new useable Model from the definition.
 func (def *ModelDef) Instance(adr uint16, callback func(pts []Point) error) (Model, error) {
 	m := &model{}
 
@@ -71,49 +71,49 @@ func (def *ModelDef) Instance(adr uint16, callback func(pts []Point) error) (Mod
 				}
 				switch def.Type {
 				case "int16":
-					p = &t_Int16{b, toInt16(def.Value), f}
+					p = &tInt16{b, toInt16(def.Value), f}
 				case "int32":
-					p = &t_Int32{b, toInt32(def.Value), f}
+					p = &tInt32{b, toInt32(def.Value), f}
 				case "int64":
-					p = &t_Int64{b, toInt64(def.Value), f}
+					p = &tInt64{b, toInt64(def.Value), f}
 				case "pad":
-					p = &t_Pad{b}
+					p = &tPad{b}
 				case "sunnsf":
-					p = &t_Sunssf{b, toInt16(def.Value)}
+					p = &tSunssf{b, toInt16(def.Value)}
 				case "uint16":
-					p = &t_Uint16{b, toUint16(def.Value), f}
+					p = &tUint16{b, toUint16(def.Value), f}
 				case "uint32":
-					p = &t_Uint32{b, toUint32(def.Value), f}
+					p = &tUint32{b, toUint32(def.Value), f}
 				case "uint64":
-					p = &t_Uint64{b, toUint64(def.Value), f}
+					p = &tUint64{b, toUint64(def.Value), f}
 				case "acc16":
-					p = &t_Acc16{b, toUint16(def.Value), f}
+					p = &tAcc16{b, toUint16(def.Value), f}
 				case "acc32":
-					p = &t_Acc32{b, toUint32(def.Value), f}
+					p = &tAcc32{b, toUint32(def.Value), f}
 				case "acc64":
-					p = &t_Acc64{b, toUint64(def.Value), f}
+					p = &tAcc64{b, toUint64(def.Value), f}
 				case "bitfield16":
-					p = &t_Bitfield16{b, toUint16(def.Value), s}
+					p = &tBitfield16{b, toUint16(def.Value), s}
 				case "bitfield32":
-					p = &t_Bitfield32{b, toUint32(def.Value), s}
+					p = &tBitfield32{b, toUint32(def.Value), s}
 				case "bitfield64":
-					p = &t_Bitfield64{b, toUint64(def.Value), s}
+					p = &tBitfield64{b, toUint64(def.Value), s}
 				case "enum16":
-					p = &t_Enum16{b, toUint16(def.Value), s}
+					p = &tEnum16{b, toUint16(def.Value), s}
 				case "enum32":
-					p = &t_Enum32{b, toUint32(def.Value), s}
+					p = &tEnum32{b, toUint32(def.Value), s}
 				case "string":
-					p = &t_String{b, append(make([]byte, 0, def.Size*2), toByteS(def.Value)...)}
+					p = &tString{b, append(make([]byte, 0, def.Size*2), toByteS(def.Value)...)}
 				case "float32":
-					p = &t_Float32{b, toFloat32(def.Value)}
+					p = &tFloat32{b, toFloat32(def.Value)}
 				case "float64":
-					p = &t_Float64{b, toFloat64(def.Value)}
+					p = &tFloat64{b, toFloat64(def.Value)}
 				case "ipaddr":
-					p = &t_Ipaddr{b, [4]byte{}} // initial value ToDo
+					p = &tIpaddr{b, [4]byte{}} // initial value ToDo
 				case "ipv6addr":
-					p = &t_Ipv6addr{b, [16]byte{}} // initial value ToDo
+					p = &tIpv6addr{b, [16]byte{}} // initial value ToDo
 				case "eui48":
-					p = &t_Eui48{b, [8]byte{}} // initial value ToDo
+					p = &tEui48{b, [8]byte{}} // initial value ToDo
 				}
 				g.points = append(g.points, p)
 				adr += p.Quantity()
@@ -219,7 +219,7 @@ func Verify(m Model) error {
 	return iterate(m, func(g Group) error {
 		switch {
 		case g.Address() != adr:
-			return errors.New("sunspec: the given address range is not continuos")
+			return errors.New("sunspec: the given address range is not continuous")
 		case !r.Match([]byte(g.Name())):
 			return errors.New("sunspec: the name is violating the specifications definition")
 		case g.Points() == nil:
@@ -228,7 +228,7 @@ func Verify(m Model) error {
 		for _, p := range g.Points() {
 			switch {
 			case p.Address() != adr:
-				return errors.New("sunspec: the given address range is not continuos")
+				return errors.New("sunspec: the given address range is not continuous")
 			case !r.Match([]byte(p.Name())):
 				return errors.New("sunspec: the name is violating the specifications definition")
 			}
@@ -248,8 +248,7 @@ func (mls Models) First() Model { return mls[0] }
 // Last returns the last model from the collection.
 func (mls Models) Last() Model { return mls[len(mls)-1] }
 
-// Model returns the first model found from the collection identified by the given id.
-// If no model is found nil is returned instead.
+// Model returns the first immediate model identified by id.
 func (mls Models) Model(id uint16) Model {
 	for _, m := range mls {
 		if m.ID().Get() == id {
@@ -259,8 +258,8 @@ func (mls Models) Model(id uint16) Model {
 	return nil
 }
 
-// Model returns a sub-collection of models identified by the given ids from the container.
-// If ids is omitted a copy of the container itself is returned.
+// Models returns all models from the device.
+// If ids are omitted all models are returned.
 func (mls Models) Models(ids ...uint16) Models {
 	if len(ids) == 0 {
 		return append(Models(nil), mls...)

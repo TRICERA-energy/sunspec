@@ -20,7 +20,7 @@ type Point interface {
 	Decode(buf []byte) error
 }
 
-// Point is the definition of a sunspec Point element.
+// PointDef is the definition of a sunspec point element.
 type PointDef struct {
 	Name        string      `json:"name"`
 	Type        string      `json:"type"`
@@ -85,7 +85,7 @@ func (pts Points) Quantity() uint16 {
 	return l
 }
 
-// Point returns the first point identified by the id from the collection.
+// Point returns the first immediate point identified by name.
 func (pts Points) Point(name string) Point {
 	for _, p := range pts {
 		if p.Name() == name {
@@ -95,8 +95,8 @@ func (pts Points) Point(name string) Point {
 	return nil
 }
 
-// Points returns a sub-collection of points identified by the given ids from the container.
-// If ids are omitted a copy of the container itself is returned.
+// Points returns all immediate points identified by names.
+// If names are omitted all points are returned.
 func (pts Points) Points(names ...string) Points {
 	if len(names) == 0 {
 		return append(Points(nil), pts...)
@@ -113,7 +113,7 @@ func (pts Points) Points(names ...string) Points {
 	return col
 }
 
-// address is internally used to get the address of a continuos collection of points.
+// address is internally used to get the address of a continuous collection of points.
 func (pts Points) address() uint16 { return pts[0].Address() }
 
 // Index returns the merged indexes of all points in the collection.
@@ -125,7 +125,7 @@ func (pts Points) Index() []Index {
 	return merge(idx)
 }
 
-// index is internally used to get the locality of a continuos collection of points.
+// index is internally used to get the locality of a continuous collection of points.
 func (pts Points) index() Index {
 	return index{address: pts.address(), quantity: pts.Quantity()}
 }

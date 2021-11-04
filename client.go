@@ -22,7 +22,7 @@ type Client struct {
 var _ Device = (*Client)(nil)
 
 // Scan analyses the server retrieving its device.
-// The process uses the given defintion as reference.
+// The process uses the given definition as reference.
 func (c *Client) Scan(ctx context.Context, defs ...Definition) (err error) {
 	c.Device, err = c.scan(ctx, defs)
 	return err

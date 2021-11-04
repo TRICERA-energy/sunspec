@@ -28,7 +28,7 @@ func marker(adr uint16) Model {
 		&group{
 			name: "marker",
 			points: Points{
-				&t_String{
+				&tString{
 					data: []byte("SunS"),
 					point: point{
 						name:    "SunS",
@@ -47,7 +47,7 @@ func header(adr, id, l uint16) Model {
 		&group{
 			name: "header",
 			points: Points{
-				&t_Uint16{
+				&tUint16{
 					data: id,
 					point: point{
 						name:    "ID",
@@ -55,7 +55,7 @@ func header(adr, id, l uint16) Model {
 						address: adr,
 					},
 				},
-				&t_Uint16{
+				&tUint16{
 					data: l,
 					point: point{
 						name:    "L",

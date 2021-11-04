@@ -71,6 +71,7 @@ func handler(ctx context.Context, isWrite bool, pts sunspec.Points) error {
 	return nil
 }
 
+// Server starts up a new sunspec server.
 func Server() {
 	// create a new sunspec server instance
 	s := sunspec.NewServer(sunspec.Config{Endpoint: endpoint})
@@ -79,6 +80,8 @@ func Server() {
 	logger.Println(s.Serve(ctx, handler, defs...))
 }
 
+// Client instantiates a new sunspec client.
+// First scanning then polling the server every second.
 func Client() {
 	// create a new client requesting data from the server
 	c := sunspec.NewClient(sunspec.Config{Endpoint: endpoint})

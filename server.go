@@ -26,7 +26,7 @@ func (s *Server) Model(id uint16) Model { return s.models[1 : len(s.models)-1].M
 // Models returns all models from the device.
 func (s *Server) Models(ids ...uint16) Models { return s.models[1 : len(s.models)-1].Models(ids...) }
 
-// Serve instantiates the model, as declared in the defintion and starts serving it to connected clients.
+// Serve instantiates the model, as declared in the definition and starts serving it to connected clients.
 // The handler function is called for any incoming client request.
 func (s *Server) Serve(ctx context.Context, handler func(ctx context.Context, isWrite bool, pts Points) error, defs ...Definition) error {
 	// append the start marker
