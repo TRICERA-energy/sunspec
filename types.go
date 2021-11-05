@@ -20,39 +20,29 @@ type scale struct {
 	f interface{}
 }
 
-// init initializes the scale by setting its constant value or
-// backtracing the references point of type sunssf.
-func (s *scale) init(p Point) {
+// Scaled specifies whether the point is scaled using an optional factor.
+func (s *scale) Scaled() bool {
+	return s.f != nil
+}
+
+// factor returns the scale value of the point.
+func (s *scale) factor(p Point) int16 {
 	switch sf := s.f.(type) {
-	case int:
-		s.f = int16(sf)
-	case float64:
-		s.f = int16(sf)
+	case int16:
+		return sf
+	case Sunssf:
+		return sf.Get()
 	case string:
 		for g := p.Origin(); g != nil; g = g.Origin() {
 			for _, p := range g.Points() {
 				if p.Name() == sf {
 					if p, ok := p.(Sunssf); ok {
 						s.f = p
+						return p.Get()
 					}
 				}
 			}
 		}
-	}
-}
-
-// Scaled specifies whether the point is scaled using an optional factor.
-func (s *scale) Scaled() bool {
-	return s.f != nil
-}
-
-// Factor returns the scale value of the point.
-func (s *scale) Factor() int16 {
-	switch sf := s.f.(type) {
-	case int16:
-		return sf
-	case Sunssf:
-		return sf.Get()
 	}
 	return 0
 }
@@ -90,14 +80,14 @@ func (t *tInt16) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tInt16) Quantity() uint16 { return 1 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tInt16) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tInt16) encode(buf []byte) error {
 	binary.BigEndian.PutUint16(buf, uint16(t.Get()))
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tInt16) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tInt16) decode(buf []byte) error {
 	return t.Set(int16(binary.BigEndian.Uint16(buf)))
 }
 
@@ -109,6 +99,9 @@ func (t *tInt16) Set(v int16) error {
 
 // Get returns the point´s underlying value.
 func (t *tInt16) Get() int16 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tInt16) Factor() int16 { return t.factor(t) }
 
 // Value returns the scaled value as defined by the specification.
 func (t *tInt16) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
@@ -146,14 +139,14 @@ func (t *tInt32) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tInt32) Quantity() uint16 { return 2 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tInt32) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tInt32) encode(buf []byte) error {
 	binary.BigEndian.PutUint32(buf, uint32(t.Get()))
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tInt32) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tInt32) decode(buf []byte) error {
 	return t.Set(int32((binary.BigEndian.Uint32(buf))))
 }
 
@@ -165,6 +158,9 @@ func (t *tInt32) Set(v int32) error {
 
 // Get returns the point´s underlying value.
 func (t *tInt32) Get() int32 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tInt32) Factor() int16 { return t.factor(t) }
 
 // Value returns the scaled value as defined by the specification.
 func (t *tInt32) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
@@ -202,14 +198,14 @@ func (t *tInt64) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tInt64) Quantity() uint16 { return 4 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tInt64) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tInt64) encode(buf []byte) error {
 	binary.BigEndian.PutUint64(buf, uint64(t.Get()))
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tInt64) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tInt64) decode(buf []byte) error {
 	return t.Set(int64(binary.BigEndian.Uint64(buf)))
 }
 
@@ -221,6 +217,9 @@ func (t *tInt64) Set(v int64) error {
 
 // Get returns the point´s underlying value.
 func (t *tInt64) Get() int64 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tInt64) Factor() int16 { return t.factor(t) }
 
 // Value returns the scaled value as defined by the specification.
 func (t *tInt64) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
@@ -248,14 +247,14 @@ func (t *tPad) String() string { return "" }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tPad) Quantity() uint16 { return 1 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tPad) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tPad) encode(buf []byte) error {
 	binary.BigEndian.PutUint16(buf, 0x8000)
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tPad) Decode(buf []byte) error { return nil }
+// decode sets the point´s value from a buffer.
+func (t *tPad) decode(buf []byte) error { return nil }
 
 // ****************************************************************************
 
@@ -283,14 +282,14 @@ func (t *tSunssf) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tSunssf) Quantity() uint16 { return 1 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tSunssf) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tSunssf) encode(buf []byte) error {
 	binary.BigEndian.PutUint16(buf, uint16(t.Get()))
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tSunssf) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tSunssf) decode(buf []byte) error {
 	return t.set(int16(binary.BigEndian.Uint16(buf)))
 }
 
@@ -339,14 +338,14 @@ func (t *tUint16) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tUint16) Quantity() uint16 { return 1 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tUint16) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tUint16) encode(buf []byte) error {
 	binary.BigEndian.PutUint16(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tUint16) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tUint16) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint16(buf))
 }
 
@@ -358,6 +357,9 @@ func (t *tUint16) Set(v uint16) error {
 
 // Get returns the point´s underlying value.
 func (t *tUint16) Get() uint16 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tUint16) Factor() int16 { return t.factor(t) }
 
 // Value returns the scaled value as defined by the specification.
 func (t *tUint16) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
@@ -395,14 +397,14 @@ func (t *tUint32) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tUint32) Quantity() uint16 { return 2 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tUint32) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tUint32) encode(buf []byte) error {
 	binary.BigEndian.PutUint32(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tUint32) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tUint32) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint32(buf))
 }
 
@@ -414,6 +416,9 @@ func (t *tUint32) Set(v uint32) error {
 
 // Get returns the point´s underlying value.
 func (t *tUint32) Get() uint32 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tUint32) Factor() int16 { return t.factor(t) }
 
 // Value returns the scaled value as defined by the specification.
 func (t *tUint32) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
@@ -451,14 +456,14 @@ func (t *tUint64) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tUint64) Quantity() uint16 { return 4 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tUint64) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tUint64) encode(buf []byte) error {
 	binary.BigEndian.PutUint64(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tUint64) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tUint64) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint64(buf))
 }
 
@@ -470,6 +475,9 @@ func (t *tUint64) Set(v uint64) error {
 
 // Get returns the point´s underlying value.
 func (t *tUint64) Get() uint64 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tUint64) Factor() int16 { return t.factor(t) }
 
 // Value returns the scaled value as defined by the specification.
 func (t *tUint64) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
@@ -505,14 +513,14 @@ func (t *tAcc16) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tAcc16) Quantity() uint16 { return 1 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tAcc16) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tAcc16) encode(buf []byte) error {
 	binary.BigEndian.PutUint16(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tAcc16) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tAcc16) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint16(buf))
 }
 
@@ -524,6 +532,9 @@ func (t *tAcc16) Set(v uint16) error {
 
 // Get returns the point´s underlying value.
 func (t *tAcc16) Get() uint16 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tAcc16) Factor() int16 { return t.factor(t) }
 
 // ****************************************************************************
 
@@ -556,14 +567,14 @@ func (t *tAcc32) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tAcc32) Quantity() uint16 { return 2 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tAcc32) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tAcc32) encode(buf []byte) error {
 	binary.BigEndian.PutUint32(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tAcc32) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tAcc32) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint32(buf))
 }
 
@@ -575,6 +586,9 @@ func (t *tAcc32) Set(v uint32) error {
 
 // Get returns the point´s underlying value.
 func (t *tAcc32) Get() uint32 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tAcc32) Factor() int16 { return t.factor(t) }
 
 // ****************************************************************************
 
@@ -607,14 +621,14 @@ func (t *tAcc64) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tAcc64) Quantity() uint16 { return 4 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tAcc64) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tAcc64) encode(buf []byte) error {
 	binary.BigEndian.PutUint64(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tAcc64) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tAcc64) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint64(buf))
 }
 
@@ -626,6 +640,9 @@ func (t *tAcc64) Set(v uint64) error {
 
 // Get returns the point´s underlying value.
 func (t *tAcc64) Get() uint64 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tAcc64) Factor() int16 { return t.factor(t) }
 
 // ****************************************************************************
 
@@ -662,14 +679,14 @@ func (t *tBitfield16) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tBitfield16) Quantity() uint16 { return 1 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tBitfield16) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tBitfield16) encode(buf []byte) error {
 	binary.BigEndian.PutUint16(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tBitfield16) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tBitfield16) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint16(buf))
 }
 
@@ -749,14 +766,14 @@ func (t *tBitfield32) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tBitfield32) Quantity() uint16 { return 2 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tBitfield32) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tBitfield32) encode(buf []byte) error {
 	binary.BigEndian.PutUint32(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tBitfield32) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tBitfield32) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint32(buf))
 }
 
@@ -836,14 +853,14 @@ func (t *tBitfield64) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tBitfield64) Quantity() uint16 { return 4 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tBitfield64) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tBitfield64) encode(buf []byte) error {
 	binary.BigEndian.PutUint64(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tBitfield64) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tBitfield64) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint64(buf))
 }
 
@@ -919,14 +936,14 @@ func (t *tEnum16) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tEnum16) Quantity() uint16 { return 1 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tEnum16) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tEnum16) encode(buf []byte) error {
 	binary.BigEndian.PutUint16(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tEnum16) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tEnum16) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint16(buf))
 }
 
@@ -973,14 +990,14 @@ func (t *tEnum32) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tEnum32) Quantity() uint16 { return 2 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tEnum32) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tEnum32) encode(buf []byte) error {
 	binary.BigEndian.PutUint32(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tEnum32) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tEnum32) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint32(buf))
 }
 
@@ -1024,14 +1041,14 @@ func (t *tString) String() string { return t.Get() }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tString) Quantity() uint16 { return uint16(cap(t.data) / 2) }
 
-// Encode puts the point´s value into a buffer.
-func (t *tString) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tString) encode(buf []byte) error {
 	copy(buf, []byte(t.Get()))
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tString) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tString) decode(buf []byte) error {
 	return t.Set(string(buf[:2*t.Quantity()]))
 }
 
@@ -1072,14 +1089,14 @@ func (t *tFloat32) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tFloat32) Quantity() uint16 { return 2 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tFloat32) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tFloat32) encode(buf []byte) error {
 	binary.BigEndian.PutUint32(buf, math.Float32bits(t.Get()))
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tFloat32) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tFloat32) decode(buf []byte) error {
 	return t.Set(math.Float32frombits(binary.BigEndian.Uint32(buf)))
 }
 
@@ -1120,14 +1137,14 @@ func (t *tFloat64) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tFloat64) Quantity() uint16 { return 4 }
 
-// Encode puts the point´s value into a buffer.
-func (t *tFloat64) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tFloat64) encode(buf []byte) error {
 	binary.BigEndian.PutUint64(buf, math.Float64bits(t.Get()))
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tFloat64) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tFloat64) decode(buf []byte) error {
 	return t.Set(math.Float64frombits(binary.BigEndian.Uint64(buf)))
 }
 
@@ -1170,14 +1187,14 @@ func (t *tIpaddr) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tIpaddr) Quantity() uint16 { return uint16(len(t.data) / 2) }
 
-// Encode puts the point´s value into a buffer.
-func (t *tIpaddr) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tIpaddr) encode(buf []byte) error {
 	copy(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tIpaddr) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tIpaddr) decode(buf []byte) error {
 	return t.Set(buf)
 }
 
@@ -1226,14 +1243,14 @@ func (t *tIpv6addr) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tIpv6addr) Quantity() uint16 { return uint16(len(t.data) / 2) }
 
-// Encode puts the point´s value into a buffer.
-func (t *tIpv6addr) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tIpv6addr) encode(buf []byte) error {
 	copy(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tIpv6addr) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tIpv6addr) decode(buf []byte) error {
 	return t.Set(buf)
 }
 
@@ -1282,14 +1299,14 @@ func (t *tEui48) String() string { return fmt.Sprintf("%v", t.Get()) }
 // Quantity returns the number of modbus registers required to store the underlying value.
 func (t *tEui48) Quantity() uint16 { return uint16(len(t.data) / 2) }
 
-// Encode puts the point´s value into a buffer.
-func (t *tEui48) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tEui48) encode(buf []byte) error {
 	copy(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *tEui48) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tEui48) decode(buf []byte) error {
 	return t.Set(buf)
 }
 

@@ -57,72 +57,8 @@ func (def *ModelDef) Instance(adr uint16, callback func(pts []Point) error) (Mod
 		}
 		for _, def := range def.Points {
 			for c := m.count(def.Count); c != 0; c-- {
-				var p Point
-				b := point{
-					name:     def.Name,
-					static:   bool(def.Static),
-					writable: bool(def.Writable),
-					address:  adr,
-				}
-				f := scale{def.ScaleFactor}
-				s := make(Symbols, len(def.Symbols))
-				for _, sym := range def.Symbols {
-					s[sym.Value] = &symbol{sym.Name, sym.Value}
-				}
-				switch def.Type {
-				case "int16":
-					p = &tInt16{b, toInt16(def.Value), f}
-				case "int32":
-					p = &tInt32{b, toInt32(def.Value), f}
-				case "int64":
-					p = &tInt64{b, toInt64(def.Value), f}
-				case "pad":
-					p = &tPad{b}
-				case "sunnsf":
-					p = &tSunssf{b, toInt16(def.Value)}
-				case "uint16":
-					p = &tUint16{b, toUint16(def.Value), f}
-				case "uint32":
-					p = &tUint32{b, toUint32(def.Value), f}
-				case "uint64":
-					p = &tUint64{b, toUint64(def.Value), f}
-				case "acc16":
-					p = &tAcc16{b, toUint16(def.Value), f}
-				case "acc32":
-					p = &tAcc32{b, toUint32(def.Value), f}
-				case "acc64":
-					p = &tAcc64{b, toUint64(def.Value), f}
-				case "bitfield16":
-					p = &tBitfield16{b, toUint16(def.Value), s}
-				case "bitfield32":
-					p = &tBitfield32{b, toUint32(def.Value), s}
-				case "bitfield64":
-					p = &tBitfield64{b, toUint64(def.Value), s}
-				case "enum16":
-					p = &tEnum16{b, toUint16(def.Value), s}
-				case "enum32":
-					p = &tEnum32{b, toUint32(def.Value), s}
-				case "string":
-					p = &tString{b, append(make([]byte, 0, def.Size*2), toByteS(def.Value)...)}
-				case "float32":
-					p = &tFloat32{b, toFloat32(def.Value)}
-				case "float64":
-					p = &tFloat64{b, toFloat64(def.Value)}
-				case "ipaddr":
-					p = &tIpaddr{b, [4]byte{}} // initial value ToDo
-				case "ipv6addr":
-					p = &tIpv6addr{b, [16]byte{}} // initial value ToDo
-				case "eui48":
-					p = &tEui48{b, [8]byte{}} // initial value ToDo
-				}
-				g.points = append(g.points, p)
-				adr += p.Quantity()
-			}
-		}
-		// ToDo: refactor initialization of points
-		for _, p := range g.points {
-			if i, ok := p.(interface{ init(p Point) }); ok {
-				i.init(p)
+				g.points = append(g.points, def.Instance(adr, g))
+				adr = ceil(g.points.Last())
 			}
 		}
 		if callback != nil {

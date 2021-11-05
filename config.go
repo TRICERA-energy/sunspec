@@ -18,3 +18,13 @@ func (o *Config) logger() Logger {
 	}
 	return logger{}
 }
+
+// Client instantiates a new client from the given configuration.
+func (o Config) Client() *Client {
+	return &Client{client: newModbusClient(o.Endpoint, o.logger()), logger: o.logger()}
+}
+
+// Server instantiates a new server from the given configuration.
+func (o Config) Server() *Server {
+	return &Server{server: newModbusServer(o.Endpoint, o.logger()), logger: o.logger()}
+}

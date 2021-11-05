@@ -7,11 +7,6 @@ import (
 	"github.com/GoAethereal/modbus"
 )
 
-// NewClient creates a new sunspec client with the given configuration.
-func NewClient(cfg Config) *Client {
-	return &Client{client: newModbusClient(cfg.Endpoint, cfg.logger()), logger: cfg.logger()}
-}
-
 // Client represents a compliant sunspec client.
 type Client struct {
 	client

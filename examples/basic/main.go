@@ -62,8 +62,9 @@ func main() {
 }
 
 // handler gets called for any incoming sunspec request printing the points in question
-func handler(ctx context.Context, isWrite bool, pts sunspec.Points) error {
-	for _, p := range pts {
+func handler(ctx context.Context, req sunspec.Request) error {
+	defer req.Close()
+	for _, p := range req.Points() {
 		if p, ok := p.(sunspec.Float32); ok {
 			p.Set(rand.Float32())
 		}
@@ -74,7 +75,7 @@ func handler(ctx context.Context, isWrite bool, pts sunspec.Points) error {
 // Server starts up a new sunspec server.
 func Server() {
 	// create a new sunspec server instance
-	s := sunspec.NewServer(sunspec.Config{Endpoint: endpoint})
+	s := (sunspec.Config{Endpoint: endpoint}).Server()
 
 	// start serving
 	logger.Println(s.Serve(ctx, handler, defs...))
@@ -84,7 +85,7 @@ func Server() {
 // First scanning then polling the server every second.
 func Client() {
 	// create a new client requesting data from the server
-	c := sunspec.NewClient(sunspec.Config{Endpoint: endpoint})
+	c := (sunspec.Config{Endpoint: endpoint}).Client()
 
 	// attempt to connect to the server
 	if err := c.Connect(ctx); err != nil {

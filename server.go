@@ -6,11 +6,6 @@ import (
 	"github.com/GoAethereal/modbus"
 )
 
-// NewServer creates a new sunspec server with the given configuration.
-func NewServer(cfg Config) *Server {
-	return &Server{server: newModbusServer(cfg.Endpoint, cfg.logger()), logger: cfg.logger()}
-}
-
 // Server is a sunspec compliant server.
 type Server struct {
 	server
@@ -28,7 +23,7 @@ func (s *Server) Models(ids ...uint16) Models { return s.models[1 : len(s.models
 
 // Serve instantiates the model, as declared in the definition and starts serving it to connected clients.
 // The handler function is called for any incoming client request.
-func (s *Server) Serve(ctx context.Context, handler func(ctx context.Context, isWrite bool, pts Points) error, defs ...Definition) error {
+func (s *Server) Serve(ctx context.Context, handler func(ctx context.Context, req Request) error, defs ...Definition) error {
 	// append the start marker
 	s.models = append(Models(nil), marker(0))
 	adr := ceil(s.models.First())
@@ -52,7 +47,7 @@ func (s *Server) Serve(ctx context.Context, handler func(ctx context.Context, is
 }
 
 type server interface {
-	serve(ctx context.Context, d Device, handler func(ctx context.Context, isWrite bool, pts Points) error) error
+	serve(ctx context.Context, d Device, handler func(ctx context.Context, req Request) error) error
 }
 
 var _ server = (*mbServer)(nil)
@@ -75,7 +70,7 @@ func newModbusServer(endpoint string, l Logger) *mbServer {
 	}
 }
 
-func (s *mbServer) serve(ctx context.Context, d Device, handler func(ctx context.Context, isWrite bool, pts Points) error) error {
+func (s *mbServer) serve(ctx context.Context, d Device, handler func(ctx context.Context, req Request) error) error {
 	return s.mb.Serve(ctx, s.opt, &modbus.Mux{
 		ReadHoldingRegisters: func(ctx context.Context, address, quantity uint16) (res []byte, ex modbus.Exception) {
 			s.logger.Debug("received modbus read request for address", address, "with quantity", quantity)
@@ -83,14 +78,11 @@ func (s *mbServer) serve(ctx context.Context, d Device, handler func(ctx context
 			if err != nil {
 				return nil, modbus.ExIllegalDataAddress
 			}
-			if err := handler(ctx, false, pts); err != nil {
+			req := &request{points: pts, writing: false, buffer: make([]byte, 2*pts.Quantity())}
+			if err := handler(ctx, req); err != nil {
 				return nil, modbus.ExSlaveDeviceFailure
 			}
-			buf := make([]byte, 2*pts.Quantity())
-			if err := pts.encode(buf); err != nil {
-				return nil, modbus.ExSlaveDeviceFailure
-			}
-			return buf, nil
+			return req.buffer, nil
 		},
 		WriteMultipleRegisters: func(ctx context.Context, address uint16, values []byte) (ex modbus.Exception) {
 			s.logger.Debug("received modbus write request for address", address, "with payload", values)
@@ -104,10 +96,8 @@ func (s *mbServer) serve(ctx context.Context, d Device, handler func(ctx context
 					return modbus.ExIllegalDataAddress
 				}
 			}
-			if err := pts.decode(values); err != nil {
-				return modbus.ExSlaveDeviceFailure
-			}
-			if err := handler(ctx, true, pts); err != nil {
+			req := &request{points: pts, writing: true, buffer: values}
+			if err := handler(ctx, req); err != nil {
 				return modbus.ExSlaveDeviceFailure
 			}
 			return nil
