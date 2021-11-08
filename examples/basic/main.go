@@ -32,12 +32,12 @@ func main() {
 	endpoint = fmt.Sprintf("localhost:%v", *port)
 
 	for _, model := range models {
-		var def *sunspec.ModelDef
+		var def sunspec.ModelDef
 		// unmarshal a model schema into it´s go definition
 		if err := json.Unmarshal(model, &def); err != nil {
 			logger.Fatalln(err)
 		}
-		defs = append(defs, def)
+		defs = append(defs, &def)
 	}
 
 	var wg sync.WaitGroup
@@ -61,9 +61,10 @@ func main() {
 	wg.Wait()
 }
 
-// handler gets called for any incoming sunspec request printing the points in question
-func handler(ctx context.Context, isWrite bool, pts sunspec.Points) error {
-	for _, p := range pts {
+// handler gets called for any incoming sunspec request
+func handler(ctx context.Context, req sunspec.Request) error {
+	defer req.Flush()
+	for _, p := range req.Points() {
 		if p, ok := p.(sunspec.Float32); ok {
 			p.Set(rand.Float32())
 		}
@@ -71,17 +72,20 @@ func handler(ctx context.Context, isWrite bool, pts sunspec.Points) error {
 	return nil
 }
 
+// Server starts up a new sunspec server.
 func Server() {
 	// create a new sunspec server instance
-	s := sunspec.NewServer(sunspec.Config{Endpoint: endpoint})
+	s := (sunspec.Config{Endpoint: endpoint}).Server()
 
 	// start serving
 	logger.Println(s.Serve(ctx, handler, defs...))
 }
 
+// Client instantiates a new sunspec client.
+// First scanning then polling the server every second.
 func Client() {
 	// create a new client requesting data from the server
-	c := sunspec.NewClient(sunspec.Config{Endpoint: endpoint})
+	c := (sunspec.Config{Endpoint: endpoint}).Client()
 
 	// attempt to connect to the server
 	if err := c.Connect(ctx); err != nil {

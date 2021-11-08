@@ -13,14 +13,16 @@ type Group interface {
 	// Point returns the first immediate point identified by name.
 	Point(name string) Point
 	// Points returns all immediate points identified by names.
+	// If names are omitted all points are returned.
 	Points(names ...string) Points
 	// Group returns the first immediate group identified by name.
 	Group(name string) Group
 	// Groups returns all immediate groups identified by names.
+	// If names are omitted all groups are returned.
 	Groups(names ...string) Groups
 }
 
-// Group is the definition of a sunspec Group element.
+// GroupDef is the definition of a sunspec Group element.
 type GroupDef struct {
 	Name        string      `json:"name"`
 	Atomic      atomic      `json:"type"`
@@ -100,8 +102,7 @@ func (gps Groups) Quantity() uint16 {
 	return l
 }
 
-// Group returns the first group found identified by the given id.
-// If no group is found nil is returned instead.
+// Group returns the first immediate group identified by name.
 func (gps Groups) Group(name string) Group {
 	for _, g := range gps {
 		if g.Name() == name {
@@ -111,8 +112,8 @@ func (gps Groups) Group(name string) Group {
 	return nil
 }
 
-// Groups returns a sub-collection of groups identified by the given ids from the container.
-// If ids is omitted a copy of the collection itself is returned.
+// Groups returns all immediate groups identified by names.
+// If names are omitted all groups are returned.
 func (gps Groups) Groups(names ...string) Groups {
 	if len(names) == 0 {
 		return append(Groups(nil), gps...)

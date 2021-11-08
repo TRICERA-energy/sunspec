@@ -20,42 +20,31 @@ type scale struct {
 	f interface{}
 }
 
-// init initializes the scale by setting its constant value or
-// backtracing the references point of type sunssf.
-func (s *scale) init(p Point) {
+// Scaled specifies whether the point is scaled using an optional factor.
+func (s *scale) Scaled() bool {
+	return s.f != nil
+}
+
+// factor returns the scale value of the point.
+func (s *scale) factor(p Point) int16 {
 	switch sf := s.f.(type) {
-	case int:
-		s.f = int16(sf)
-	case float64:
-		s.f = int16(sf)
+	case int16:
+		return sf
+	case Sunssf:
+		return sf.Get()
 	case string:
 		for g := p.Origin(); g != nil; g = g.Origin() {
 			for _, p := range g.Points() {
 				if p.Name() == sf {
 					if p, ok := p.(Sunssf); ok {
 						s.f = p
+						return p.Get()
 					}
 				}
 			}
 		}
 	}
-	s.f = int16(0)
-}
-
-// Scaled specifies whether the point is scaled using an optional factor.
-func (s *scale) Scaled() bool {
-	return s.f != nil
-}
-
-// Factor returns the scale value of the point.
-func (s *scale) Factor() int16 {
-	switch sf := s.f.(type) {
-	case int16:
-		return sf
-	case Sunssf:
-		return sf.Get()
-	}
-	return 1
+	return 0
 }
 
 // ****************************************************************************
@@ -74,45 +63,48 @@ type Int16 interface {
 	Value() float64
 }
 
-type t_Int16 struct {
+type tInt16 struct {
 	point
 	data int16
 	scale
 }
 
-var _ Int16 = (*t_Int16)(nil)
+var _ Int16 = (*tInt16)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Int16) Valid() bool { return t.Get() != -0x8000 }
+func (t *tInt16) Valid() bool { return t.Get() != -0x8000 }
 
 // String formats the point´s value as string.
-func (t *t_Int16) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tInt16) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Int16) Quantity() uint16 { return 1 }
+func (t *tInt16) Quantity() uint16 { return 1 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Int16) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tInt16) encode(buf []byte) error {
 	binary.BigEndian.PutUint16(buf, uint16(t.Get()))
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Int16) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tInt16) decode(buf []byte) error {
 	return t.Set(int16(binary.BigEndian.Uint16(buf)))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Int16) Set(v int16) error {
+func (t *tInt16) Set(v int16) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Int16) Get() int16 { return t.data }
+func (t *tInt16) Get() int16 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tInt16) Factor() int16 { return t.factor(t) }
 
 // Value returns the scaled value as defined by the specification.
-func (t *t_Int16) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
+func (t *tInt16) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
 
 // ****************************************************************************
 
@@ -130,45 +122,48 @@ type Int32 interface {
 	Value() float64
 }
 
-type t_Int32 struct {
+type tInt32 struct {
 	point
 	data int32
 	scale
 }
 
-var _ (Int32) = (*t_Int32)(nil)
+var _ (Int32) = (*tInt32)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Int32) Valid() bool { return t.Get() != -0x80000000 }
+func (t *tInt32) Valid() bool { return t.Get() != -0x80000000 }
 
 // String formats the point´s value as string.
-func (t *t_Int32) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tInt32) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Int32) Quantity() uint16 { return 2 }
+func (t *tInt32) Quantity() uint16 { return 2 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Int32) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tInt32) encode(buf []byte) error {
 	binary.BigEndian.PutUint32(buf, uint32(t.Get()))
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Int32) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tInt32) decode(buf []byte) error {
 	return t.Set(int32((binary.BigEndian.Uint32(buf))))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Int32) Set(v int32) error {
+func (t *tInt32) Set(v int32) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Int32) Get() int32 { return t.data }
+func (t *tInt32) Get() int32 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tInt32) Factor() int16 { return t.factor(t) }
 
 // Value returns the scaled value as defined by the specification.
-func (t *t_Int32) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
+func (t *tInt32) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
 
 // ****************************************************************************
 
@@ -186,45 +181,48 @@ type Int64 interface {
 	Value() float64
 }
 
-type t_Int64 struct {
+type tInt64 struct {
 	point
 	data int64
 	scale
 }
 
-var _ Int64 = (*t_Int64)(nil)
+var _ Int64 = (*tInt64)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Int64) Valid() bool { return t.Get() != -0x8000000000000000 }
+func (t *tInt64) Valid() bool { return t.Get() != -0x8000000000000000 }
 
 // String formats the point´s value as string.
-func (t *t_Int64) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tInt64) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Int64) Quantity() uint16 { return 4 }
+func (t *tInt64) Quantity() uint16 { return 4 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Int64) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tInt64) encode(buf []byte) error {
 	binary.BigEndian.PutUint64(buf, uint64(t.Get()))
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Int64) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tInt64) decode(buf []byte) error {
 	return t.Set(int64(binary.BigEndian.Uint64(buf)))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Int64) Set(v int64) error {
+func (t *tInt64) Set(v int64) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Int64) Get() int64 { return t.data }
+func (t *tInt64) Get() int64 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tInt64) Factor() int16 { return t.factor(t) }
 
 // Value returns the scaled value as defined by the specification.
-func (t *t_Int64) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
+func (t *tInt64) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
 
 // ****************************************************************************
 
@@ -234,29 +232,29 @@ type Pad interface {
 	Point
 }
 
-type t_Pad struct {
+type tPad struct {
 	point
 }
 
-var _ Pad = (*t_Pad)(nil)
+var _ Pad = (*tPad)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Pad) Valid() bool { return false }
+func (t *tPad) Valid() bool { return false }
 
 // String formats the point´s value as string.
-func (t *t_Pad) String() string { return "" }
+func (t *tPad) String() string { return "" }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Pad) Quantity() uint16 { return 1 }
+func (t *tPad) Quantity() uint16 { return 1 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Pad) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tPad) encode(buf []byte) error {
 	binary.BigEndian.PutUint16(buf, 0x8000)
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Pad) Decode(buf []byte) error { return nil }
+// decode sets the point´s value from a buffer.
+func (t *tPad) decode(buf []byte) error { return nil }
 
 // ****************************************************************************
 
@@ -268,35 +266,35 @@ type Sunssf interface {
 	Get() int16
 }
 
-type t_Sunssf struct {
+type tSunssf struct {
 	point
 	data int16
 }
 
-var _ Sunssf = (*t_Sunssf)(nil)
+var _ Sunssf = (*tSunssf)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Sunssf) Valid() bool { return t.Get() != -0x8000 }
+func (t *tSunssf) Valid() bool { return t.Get() != -0x8000 }
 
 // String formats the point´s value as string.
-func (t *t_Sunssf) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tSunssf) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Sunssf) Quantity() uint16 { return 1 }
+func (t *tSunssf) Quantity() uint16 { return 1 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Sunssf) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tSunssf) encode(buf []byte) error {
 	binary.BigEndian.PutUint16(buf, uint16(t.Get()))
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Sunssf) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tSunssf) decode(buf []byte) error {
 	return t.set(int16(binary.BigEndian.Uint16(buf)))
 }
 
 // set sets the point´s underlying value.
-func (t *t_Sunssf) set(v int16) error {
+func (t *tSunssf) set(v int16) error {
 	if v < -10 || v > 10 {
 		return errors.New("sunspec: value out of boundary")
 	}
@@ -305,7 +303,7 @@ func (t *t_Sunssf) set(v int16) error {
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Sunssf) Get() int16 { return t.data }
+func (t *tSunssf) Get() int16 { return t.data }
 
 // ****************************************************************************
 
@@ -323,45 +321,48 @@ type Uint16 interface {
 	Value() float64
 }
 
-type t_Uint16 struct {
+type tUint16 struct {
 	point
 	data uint16
 	scale
 }
 
-var _ Uint16 = (*t_Uint16)(nil)
+var _ Uint16 = (*tUint16)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Uint16) Valid() bool { return t.Get() != 0xFFFF }
+func (t *tUint16) Valid() bool { return t.Get() != 0xFFFF }
 
 // String formats the point´s value as string.
-func (t *t_Uint16) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tUint16) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Uint16) Quantity() uint16 { return 1 }
+func (t *tUint16) Quantity() uint16 { return 1 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Uint16) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tUint16) encode(buf []byte) error {
 	binary.BigEndian.PutUint16(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Uint16) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tUint16) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint16(buf))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Uint16) Set(v uint16) error {
+func (t *tUint16) Set(v uint16) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Uint16) Get() uint16 { return t.data }
+func (t *tUint16) Get() uint16 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tUint16) Factor() int16 { return t.factor(t) }
 
 // Value returns the scaled value as defined by the specification.
-func (t *t_Uint16) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
+func (t *tUint16) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
 
 // ****************************************************************************
 
@@ -379,45 +380,48 @@ type Uint32 interface {
 	Value() float64
 }
 
-type t_Uint32 struct {
+type tUint32 struct {
 	point
 	data uint32
 	scale
 }
 
-var _ Uint32 = (*t_Uint32)(nil)
+var _ Uint32 = (*tUint32)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Uint32) Valid() bool { return t.Get() != 0xFFFFFFFF }
+func (t *tUint32) Valid() bool { return t.Get() != 0xFFFFFFFF }
 
 // String formats the point´s value as string.
-func (t *t_Uint32) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tUint32) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Uint32) Quantity() uint16 { return 2 }
+func (t *tUint32) Quantity() uint16 { return 2 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Uint32) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tUint32) encode(buf []byte) error {
 	binary.BigEndian.PutUint32(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Uint32) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tUint32) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint32(buf))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Uint32) Set(v uint32) error {
+func (t *tUint32) Set(v uint32) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Uint32) Get() uint32 { return t.data }
+func (t *tUint32) Get() uint32 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tUint32) Factor() int16 { return t.factor(t) }
 
 // Value returns the scaled value as defined by the specification.
-func (t *t_Uint32) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
+func (t *tUint32) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
 
 // ****************************************************************************
 
@@ -435,45 +439,48 @@ type Uint64 interface {
 	Value() float64
 }
 
-type t_Uint64 struct {
+type tUint64 struct {
 	point
 	data uint64
 	scale
 }
 
-var _ Uint64 = (*t_Uint64)(nil)
+var _ Uint64 = (*tUint64)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Uint64) Valid() bool { return t.Get() != 0xFFFFFFFFFFFFFFFF }
+func (t *tUint64) Valid() bool { return t.Get() != 0xFFFFFFFFFFFFFFFF }
 
 // String formats the point´s value as string.
-func (t *t_Uint64) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tUint64) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Uint64) Quantity() uint16 { return 4 }
+func (t *tUint64) Quantity() uint16 { return 4 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Uint64) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tUint64) encode(buf []byte) error {
 	binary.BigEndian.PutUint64(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Uint64) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tUint64) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint64(buf))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Uint64) Set(v uint64) error {
+func (t *tUint64) Set(v uint64) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Uint64) Get() uint64 { return t.data }
+func (t *tUint64) Get() uint64 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tUint64) Factor() int16 { return t.factor(t) }
 
 // Value returns the scaled value as defined by the specification.
-func (t *t_Uint64) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
+func (t *tUint64) Value() float64 { return float64(t.Get()) * math.Pow10(int(t.Factor())) }
 
 // ****************************************************************************
 
@@ -489,42 +496,45 @@ type Acc16 interface {
 	Get() uint16
 }
 
-type t_Acc16 struct {
+type tAcc16 struct {
 	point
 	data uint16
 	scale
 }
 
-var _ Acc16 = (*t_Acc16)(nil)
+var _ Acc16 = (*tAcc16)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Acc16) Valid() bool { return t.Get() != 0 }
+func (t *tAcc16) Valid() bool { return t.Get() != 0 }
 
 // String formats the point´s value as string.
-func (t *t_Acc16) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tAcc16) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Acc16) Quantity() uint16 { return 1 }
+func (t *tAcc16) Quantity() uint16 { return 1 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Acc16) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tAcc16) encode(buf []byte) error {
 	binary.BigEndian.PutUint16(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Acc16) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tAcc16) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint16(buf))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Acc16) Set(v uint16) error {
+func (t *tAcc16) Set(v uint16) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Acc16) Get() uint16 { return t.data }
+func (t *tAcc16) Get() uint16 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tAcc16) Factor() int16 { return t.factor(t) }
 
 // ****************************************************************************
 
@@ -540,42 +550,45 @@ type Acc32 interface {
 	Get() uint32
 }
 
-type t_Acc32 struct {
+type tAcc32 struct {
 	point
 	data uint32
 	scale
 }
 
-var _ (Acc32) = (*t_Acc32)(nil)
+var _ (Acc32) = (*tAcc32)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Acc32) Valid() bool { return t.Get() != 0 }
+func (t *tAcc32) Valid() bool { return t.Get() != 0 }
 
 // String formats the point´s value as string.
-func (t *t_Acc32) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tAcc32) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Acc32) Quantity() uint16 { return 2 }
+func (t *tAcc32) Quantity() uint16 { return 2 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Acc32) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tAcc32) encode(buf []byte) error {
 	binary.BigEndian.PutUint32(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Acc32) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tAcc32) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint32(buf))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Acc32) Set(v uint32) error {
+func (t *tAcc32) Set(v uint32) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Acc32) Get() uint32 { return t.data }
+func (t *tAcc32) Get() uint32 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tAcc32) Factor() int16 { return t.factor(t) }
 
 // ****************************************************************************
 
@@ -591,42 +604,91 @@ type Acc64 interface {
 	Get() uint64
 }
 
-type t_Acc64 struct {
+type tAcc64 struct {
 	point
 	data uint64
 	scale
 }
 
-var _ Acc64 = (*t_Acc64)(nil)
+var _ Acc64 = (*tAcc64)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Acc64) Valid() bool { return t.Get() != 0 }
+func (t *tAcc64) Valid() bool { return t.Get() != 0 }
 
 // String formats the point´s value as string.
-func (t *t_Acc64) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tAcc64) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Acc64) Quantity() uint16 { return 4 }
+func (t *tAcc64) Quantity() uint16 { return 4 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Acc64) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tAcc64) encode(buf []byte) error {
 	binary.BigEndian.PutUint64(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Acc64) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tAcc64) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint64(buf))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Acc64) Set(v uint64) error {
+func (t *tAcc64) Set(v uint64) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Acc64) Get() uint64 { return t.data }
+func (t *tAcc64) Get() uint64 { return t.data }
+
+// Factor returns the scale value of the point.
+func (t *tAcc64) Factor() int16 { return t.factor(t) }
+
+// ****************************************************************************
+
+// Count represents the sunspec type count.
+type Count interface {
+	// Point defines the generic behavior all sunspec types have in common.
+	Point
+	// Get returns the point´s underlying value.
+	Get() uint16
+}
+
+type tCount struct {
+	point
+	data uint16
+}
+
+var _ Count = (*tCount)(nil)
+
+// Valid specifies whether the underlying value is implemented by the device.
+func (t *tCount) Valid() bool { return t.Get() != 0 }
+
+// String formats the point´s value as string.
+func (t *tCount) String() string { return fmt.Sprintf("%v", t.Get()) }
+
+// Quantity returns the number of modbus registers required to store the underlying value.
+func (t *tCount) Quantity() uint16 { return 1 }
+
+// encode puts the point´s value into a buffer.
+func (t *tCount) encode(buf []byte) error {
+	binary.BigEndian.PutUint16(buf, t.Get())
+	return nil
+}
+
+// decode sets the point´s value from a buffer.
+func (t *tCount) decode(buf []byte) error {
+	return t.set(binary.BigEndian.Uint16(buf))
+}
+
+// Set sets the point´s underlying value.
+func (t *tCount) set(v uint16) error {
+	t.data = v
+	return nil
+}
+
+// Get returns the point´s underlying value.
+func (t *tCount) Get() uint16 { return t.data }
 
 // ****************************************************************************
 
@@ -646,45 +708,45 @@ type Bitfield16 interface {
 	States() []string
 }
 
-type t_Bitfield16 struct {
+type tBitfield16 struct {
 	point
 	data    uint16
 	symbols Symbols
 }
 
-var _ Bitfield16 = (*t_Bitfield16)(nil)
+var _ Bitfield16 = (*tBitfield16)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Bitfield16) Valid() bool { return t.Get() != 0xFFFF }
+func (t *tBitfield16) Valid() bool { return t.Get() != 0xFFFF }
 
 // String formats the point´s value as string.
-func (t *t_Bitfield16) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tBitfield16) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Bitfield16) Quantity() uint16 { return 1 }
+func (t *tBitfield16) Quantity() uint16 { return 1 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Bitfield16) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tBitfield16) encode(buf []byte) error {
 	binary.BigEndian.PutUint16(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Bitfield16) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tBitfield16) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint16(buf))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Bitfield16) Set(v uint16) error {
+func (t *tBitfield16) Set(v uint16) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Bitfield16) Get() uint16 { return t.data }
+func (t *tBitfield16) Get() uint16 { return t.data }
 
 // Flip sets the bit at position pos, starting at 0, to the value of v.
-func (t *t_Bitfield16) Flip(pos int, v bool) error {
+func (t *tBitfield16) Flip(pos int, v bool) error {
 	switch {
 	case pos < 0 || pos > 15:
 		return errors.New("sunspec: out of bounds bit position ")
@@ -695,7 +757,7 @@ func (t *t_Bitfield16) Flip(pos int, v bool) error {
 }
 
 // Field returns the individual bit values as bool array.
-func (t *t_Bitfield16) Field() (f [16]bool) {
+func (t *tBitfield16) Field() (f [16]bool) {
 	for v, b := t.Get(), 0; b < len(f); b++ {
 		f[b] = v&(1<<b) != 0
 	}
@@ -703,7 +765,7 @@ func (t *t_Bitfield16) Field() (f [16]bool) {
 }
 
 // States returns all active enumerated states, correlating the bit value to its symbol.
-func (t *t_Bitfield16) States() (s []string) {
+func (t *tBitfield16) States() (s []string) {
 	if !t.Valid() {
 		return nil
 	}
@@ -733,45 +795,45 @@ type Bitfield32 interface {
 	States() []string
 }
 
-type t_Bitfield32 struct {
+type tBitfield32 struct {
 	point
 	data    uint32
 	symbols Symbols
 }
 
-var _ Bitfield32 = (*t_Bitfield32)(nil)
+var _ Bitfield32 = (*tBitfield32)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Bitfield32) Valid() bool { return t.Get() != 0xFFFFFFFF }
+func (t *tBitfield32) Valid() bool { return t.Get() != 0xFFFFFFFF }
 
 // String formats the point´s value as string.
-func (t *t_Bitfield32) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tBitfield32) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Bitfield32) Quantity() uint16 { return 2 }
+func (t *tBitfield32) Quantity() uint16 { return 2 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Bitfield32) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tBitfield32) encode(buf []byte) error {
 	binary.BigEndian.PutUint32(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Bitfield32) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tBitfield32) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint32(buf))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Bitfield32) Set(v uint32) error {
+func (t *tBitfield32) Set(v uint32) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Bitfield32) Get() uint32 { return t.data }
+func (t *tBitfield32) Get() uint32 { return t.data }
 
 // Flip sets the bit at position pos, starting at 0, to the value of v.
-func (t *t_Bitfield32) Flip(pos int, v bool) error {
+func (t *tBitfield32) Flip(pos int, v bool) error {
 	switch {
 	case pos < 0 || pos > 31:
 		return errors.New("sunspec: out of bounds bit position ")
@@ -782,7 +844,7 @@ func (t *t_Bitfield32) Flip(pos int, v bool) error {
 }
 
 // Field returns the individual bit values as bool array.
-func (t *t_Bitfield32) Field() (f [32]bool) {
+func (t *tBitfield32) Field() (f [32]bool) {
 	for v, b := t.Get(), 0; b < len(f); b++ {
 		f[b] = v&(1<<b) != 0
 	}
@@ -790,7 +852,7 @@ func (t *t_Bitfield32) Field() (f [32]bool) {
 }
 
 // States returns all active enumerated states, correlating the bit value to its symbol.
-func (t *t_Bitfield32) States() (s []string) {
+func (t *tBitfield32) States() (s []string) {
 	if !t.Valid() {
 		return nil
 	}
@@ -820,45 +882,45 @@ type Bitfield64 interface {
 	States() []string
 }
 
-type t_Bitfield64 struct {
+type tBitfield64 struct {
 	point
 	data    uint64
 	symbols Symbols
 }
 
-var _ Bitfield64 = (*t_Bitfield64)(nil)
+var _ Bitfield64 = (*tBitfield64)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Bitfield64) Valid() bool { return t.Get() != 0xFFFFFFFFFFFFFFFF }
+func (t *tBitfield64) Valid() bool { return t.Get() != 0xFFFFFFFFFFFFFFFF }
 
 // String formats the point´s value as string.
-func (t *t_Bitfield64) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tBitfield64) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Bitfield64) Quantity() uint16 { return 4 }
+func (t *tBitfield64) Quantity() uint16 { return 4 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Bitfield64) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tBitfield64) encode(buf []byte) error {
 	binary.BigEndian.PutUint64(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Bitfield64) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tBitfield64) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint64(buf))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Bitfield64) Set(v uint64) error {
+func (t *tBitfield64) Set(v uint64) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Bitfield64) Get() uint64 { return t.data }
+func (t *tBitfield64) Get() uint64 { return t.data }
 
 // Flip sets the bit at position pos, starting at 0, to the value of v.
-func (t *t_Bitfield64) Flip(pos int, v bool) error {
+func (t *tBitfield64) Flip(pos int, v bool) error {
 	switch {
 	case pos < 0 || pos > 63:
 		return errors.New("sunspec: out of bounds bit position ")
@@ -869,7 +931,7 @@ func (t *t_Bitfield64) Flip(pos int, v bool) error {
 }
 
 // Field returns the individual bit values as bool array.
-func (t *t_Bitfield64) Field() (f [64]bool) {
+func (t *tBitfield64) Field() (f [64]bool) {
 	for v, b := t.Get(), 0; b < len(f); b++ {
 		f[b] = v&(1<<b) != 0
 	}
@@ -877,7 +939,7 @@ func (t *t_Bitfield64) Field() (f [64]bool) {
 }
 
 // States returns all active enumerated states, correlating the bit value to its symbol.
-func (t *t_Bitfield64) States() (s []string) {
+func (t *tBitfield64) States() (s []string) {
 	if !t.Valid() {
 		return nil
 	}
@@ -903,45 +965,45 @@ type Enum16 interface {
 	State() string
 }
 
-type t_Enum16 struct {
+type tEnum16 struct {
 	point
 	data    uint16
 	symbols Symbols
 }
 
-var _ Enum16 = (*t_Enum16)(nil)
+var _ Enum16 = (*tEnum16)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Enum16) Valid() bool { return t.Get() != 0xFFFF }
+func (t *tEnum16) Valid() bool { return t.Get() != 0xFFFF }
 
 // String formats the point´s value as string.
-func (t *t_Enum16) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tEnum16) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Enum16) Quantity() uint16 { return 1 }
+func (t *tEnum16) Quantity() uint16 { return 1 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Enum16) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tEnum16) encode(buf []byte) error {
 	binary.BigEndian.PutUint16(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Enum16) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tEnum16) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint16(buf))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Enum16) Set(v uint16) error {
+func (t *tEnum16) Set(v uint16) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Enum16) Get() uint16 { return t.data }
+func (t *tEnum16) Get() uint16 { return t.data }
 
 // State returns the currently active enumerated state.
-func (t *t_Enum16) State() string { return t.symbols[uint32(t.Get())].Name() }
+func (t *tEnum16) State() string { return t.symbols[uint32(t.Get())].Name() }
 
 // ****************************************************************************
 
@@ -957,45 +1019,45 @@ type Enum32 interface {
 	State() string
 }
 
-type t_Enum32 struct {
+type tEnum32 struct {
 	point
 	data    uint32
 	symbols Symbols
 }
 
-var _ Enum32 = (*t_Enum32)(nil)
+var _ Enum32 = (*tEnum32)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Enum32) Valid() bool { return t.Get() != 0xFFFFFFFF }
+func (t *tEnum32) Valid() bool { return t.Get() != 0xFFFFFFFF }
 
 // String formats the point´s value as string.
-func (t *t_Enum32) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tEnum32) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Enum32) Quantity() uint16 { return 2 }
+func (t *tEnum32) Quantity() uint16 { return 2 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Enum32) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tEnum32) encode(buf []byte) error {
 	binary.BigEndian.PutUint32(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Enum32) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tEnum32) decode(buf []byte) error {
 	return t.Set(binary.BigEndian.Uint32(buf))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Enum32) Set(v uint32) error {
+func (t *tEnum32) Set(v uint32) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Enum32) Get() uint32 { return t.data }
+func (t *tEnum32) Get() uint32 { return t.data }
 
 // State returns the currently active enumerated state.
-func (t *t_Enum32) State() string { return t.symbols[t.Get()].Name() }
+func (t *tEnum32) State() string { return t.symbols[t.Get()].Name() }
 
 // ****************************************************************************
 
@@ -1009,41 +1071,41 @@ type String interface {
 	Get() string
 }
 
-type t_String struct {
+type tString struct {
 	point
 	data []byte
 }
 
-var _ String = (*t_String)(nil)
+var _ String = (*tString)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_String) Valid() bool { return t.Get() != "" }
+func (t *tString) Valid() bool { return t.Get() != "" }
 
 // String formats the point´s value as string.
-func (t *t_String) String() string { return t.Get() }
+func (t *tString) String() string { return t.Get() }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_String) Quantity() uint16 { return uint16(cap(t.data) / 2) }
+func (t *tString) Quantity() uint16 { return uint16(cap(t.data) / 2) }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_String) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tString) encode(buf []byte) error {
 	copy(buf, []byte(t.Get()))
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_String) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tString) decode(buf []byte) error {
 	return t.Set(string(buf[:2*t.Quantity()]))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_String) Set(v string) error {
+func (t *tString) Set(v string) error {
 	copy(t.data[:cap(t.data)], v)
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_String) Get() string { return string(t.data) }
+func (t *tString) Get() string { return string(t.data) }
 
 // ****************************************************************************
 
@@ -1057,41 +1119,41 @@ type Float32 interface {
 	Get() float32
 }
 
-type t_Float32 struct {
+type tFloat32 struct {
 	point
 	data float32
 }
 
-var _ Float32 = (*t_Float32)(nil)
+var _ Float32 = (*tFloat32)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Float32) Valid() bool { return t.Get() != 0x7FC00000 }
+func (t *tFloat32) Valid() bool { return t.Get() != 0x7FC00000 }
 
 // String formats the point´s value as string.
-func (t *t_Float32) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tFloat32) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Float32) Quantity() uint16 { return 2 }
+func (t *tFloat32) Quantity() uint16 { return 2 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Float32) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tFloat32) encode(buf []byte) error {
 	binary.BigEndian.PutUint32(buf, math.Float32bits(t.Get()))
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Float32) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tFloat32) decode(buf []byte) error {
 	return t.Set(math.Float32frombits(binary.BigEndian.Uint32(buf)))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Float32) Set(v float32) error {
+func (t *tFloat32) Set(v float32) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Float32) Get() float32 { return t.data }
+func (t *tFloat32) Get() float32 { return t.data }
 
 // ****************************************************************************
 
@@ -1105,41 +1167,41 @@ type Float64 interface {
 	Get() float64
 }
 
-type t_Float64 struct {
+type tFloat64 struct {
 	point
 	data float64
 }
 
-var _ Float64 = (*t_Float64)(nil)
+var _ Float64 = (*tFloat64)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Float64) Valid() bool { return t.Get() != 0x7FC00000 }
+func (t *tFloat64) Valid() bool { return t.Get() != 0x7FC00000 }
 
 // String formats the point´s value as string.
-func (t *t_Float64) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tFloat64) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Float64) Quantity() uint16 { return 4 }
+func (t *tFloat64) Quantity() uint16 { return 4 }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Float64) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tFloat64) encode(buf []byte) error {
 	binary.BigEndian.PutUint64(buf, math.Float64bits(t.Get()))
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Float64) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tFloat64) decode(buf []byte) error {
 	return t.Set(math.Float64frombits(binary.BigEndian.Uint64(buf)))
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Float64) Set(v float64) error {
+func (t *tFloat64) Set(v float64) error {
 	t.data = v
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Float64) Get() float64 { return t.data }
+func (t *tFloat64) Get() float64 { return t.data }
 
 // ****************************************************************************
 
@@ -1155,44 +1217,44 @@ type Ipaddr interface {
 	Raw() [4]byte
 }
 
-type t_Ipaddr struct {
+type tIpaddr struct {
 	point
 	data [4]byte
 }
 
-var _ Ipaddr = (*t_Ipaddr)(nil)
+var _ Ipaddr = (*tIpaddr)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Ipaddr) Valid() bool { return t.data != [4]byte{} }
+func (t *tIpaddr) Valid() bool { return t.data != [4]byte{} }
 
 // String formats the point´s value as string.
-func (t *t_Ipaddr) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tIpaddr) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Ipaddr) Quantity() uint16 { return uint16(len(t.data) / 2) }
+func (t *tIpaddr) Quantity() uint16 { return uint16(len(t.data) / 2) }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Ipaddr) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tIpaddr) encode(buf []byte) error {
 	copy(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Ipaddr) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tIpaddr) decode(buf []byte) error {
 	return t.Set(buf)
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Ipaddr) Set(v net.IP) error {
+func (t *tIpaddr) Set(v net.IP) error {
 	copy(t.data[:len(t.data)], v)
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Ipaddr) Get() net.IP { return append(net.IP(nil), t.data[:]...) }
+func (t *tIpaddr) Get() net.IP { return append(net.IP(nil), t.data[:]...) }
 
 // Raw returns the point´s raw data.
-func (t *t_Ipaddr) Raw() (r [4]byte) {
+func (t *tIpaddr) Raw() (r [4]byte) {
 	copy(r[:], t.Get())
 	return r
 }
@@ -1211,44 +1273,44 @@ type Ipv6addr interface {
 	Raw() [16]byte
 }
 
-type t_Ipv6addr struct {
+type tIpv6addr struct {
 	point
 	data [16]byte
 }
 
-var _ Ipv6addr = (*t_Ipv6addr)(nil)
+var _ Ipv6addr = (*tIpv6addr)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Ipv6addr) Valid() bool { return t.data != [16]byte{} }
+func (t *tIpv6addr) Valid() bool { return t.data != [16]byte{} }
 
 // String formats the point´s value as string.
-func (t *t_Ipv6addr) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tIpv6addr) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Ipv6addr) Quantity() uint16 { return uint16(len(t.data) / 2) }
+func (t *tIpv6addr) Quantity() uint16 { return uint16(len(t.data) / 2) }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Ipv6addr) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tIpv6addr) encode(buf []byte) error {
 	copy(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Ipv6addr) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tIpv6addr) decode(buf []byte) error {
 	return t.Set(buf)
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Ipv6addr) Set(v net.IP) error {
+func (t *tIpv6addr) Set(v net.IP) error {
 	copy(t.data[:len(t.data)], v)
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Ipv6addr) Get() net.IP { return append(net.IP(nil), t.data[:]...) }
+func (t *tIpv6addr) Get() net.IP { return append(net.IP(nil), t.data[:]...) }
 
 // Raw returns the point´s raw data.
-func (t *t_Ipv6addr) Raw() (r [16]byte) {
+func (t *tIpv6addr) Raw() (r [16]byte) {
 	copy(r[:], t.Get())
 	return r
 }
@@ -1267,44 +1329,44 @@ type Eui48 interface {
 	Raw() [8]byte
 }
 
-type t_Eui48 struct {
+type tEui48 struct {
 	point
 	data [8]byte
 }
 
-var _ Eui48 = (*t_Eui48)(nil)
+var _ Eui48 = (*tEui48)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *t_Eui48) Valid() bool { return true } //?
+func (t *tEui48) Valid() bool { return true } //?
 
 // String formats the point´s value as string.
-func (t *t_Eui48) String() string { return fmt.Sprintf("%v", t.Get()) }
+func (t *tEui48) String() string { return fmt.Sprintf("%v", t.Get()) }
 
 // Quantity returns the number of modbus registers required to store the underlying value.
-func (t *t_Eui48) Quantity() uint16 { return uint16(len(t.data) / 2) }
+func (t *tEui48) Quantity() uint16 { return uint16(len(t.data) / 2) }
 
-// Encode puts the point´s value into a buffer.
-func (t *t_Eui48) Encode(buf []byte) error {
+// encode puts the point´s value into a buffer.
+func (t *tEui48) encode(buf []byte) error {
 	copy(buf, t.Get())
 	return nil
 }
 
-// Decode sets the point´s value from a buffer.
-func (t *t_Eui48) Decode(buf []byte) error {
+// decode sets the point´s value from a buffer.
+func (t *tEui48) decode(buf []byte) error {
 	return t.Set(buf)
 }
 
 // Set sets the point´s underlying value.
-func (t *t_Eui48) Set(v net.HardwareAddr) error {
+func (t *tEui48) Set(v net.HardwareAddr) error {
 	copy(t.data[:len(t.data)], v)
 	return nil
 }
 
 // Get returns the point´s underlying value.
-func (t *t_Eui48) Get() net.HardwareAddr { return append(net.HardwareAddr(nil), t.data[:]...) }
+func (t *tEui48) Get() net.HardwareAddr { return append(net.HardwareAddr(nil), t.data[:]...) }
 
 // Raw returns the point´s raw data.
-func (t *t_Eui48) Raw() (r [8]byte) {
+func (t *tEui48) Raw() (r [8]byte) {
 	copy(r[:], t.Get())
 	return r
 }

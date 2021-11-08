@@ -14,13 +14,13 @@ type Point interface {
 	Static() bool
 	// Writable specifies whether the point can be written to.
 	Writable() bool
-	// Encode puts the point´s value into a buffer.
-	Encode(buf []byte) error
-	// Decode sets the point´s value from a buffer.
-	Decode(buf []byte) error
+	// encode puts the point´s value into a buffer.
+	encode(buf []byte) error
+	// decode sets the point´s value from a buffer.
+	decode(buf []byte) error
 }
 
-// Point is the definition of a sunspec Point element.
+// PointDef is the definition of a sunspec point element.
 type PointDef struct {
 	Name        string      `json:"name"`
 	Type        string      `json:"type"`
@@ -40,10 +40,74 @@ type PointDef struct {
 	Symbols     []SymbolDef `json:"symbols,omitempty"`
 }
 
+func (def *PointDef) Instance(adr uint16, o Group) Point {
+	p := point{
+		name:     def.Name,
+		static:   bool(def.Static),
+		writable: bool(def.Writable),
+		origin:   o,
+		address:  adr,
+	}
+	f := scale{def.ScaleFactor}
+	s := make(Symbols, len(def.Symbols))
+	for _, sym := range def.Symbols {
+		s[sym.Value] = &symbol{sym.Name, sym.Value}
+	}
+	switch def.Type {
+	case "int16":
+		return &tInt16{p, toInt16(def.Value), f}
+	case "int32":
+		return &tInt32{p, toInt32(def.Value), f}
+	case "int64":
+		return &tInt64{p, toInt64(def.Value), f}
+	case "pad":
+		return &tPad{p}
+	case "sunnsf":
+		return &tSunssf{p, toInt16(def.Value)}
+	case "uint16":
+		return &tUint16{p, toUint16(def.Value), f}
+	case "uint32":
+		return &tUint32{p, toUint32(def.Value), f}
+	case "uint64":
+		return &tUint64{p, toUint64(def.Value), f}
+	case "acc16":
+		return &tAcc16{p, toUint16(def.Value), f}
+	case "acc32":
+		return &tAcc32{p, toUint32(def.Value), f}
+	case "acc64":
+		return &tAcc64{p, toUint64(def.Value), f}
+	case "count":
+		return &tCount{p, toUint16(def.Value)}
+	case "bitfield16":
+		return &tBitfield16{p, toUint16(def.Value), s}
+	case "bitfield32":
+		return &tBitfield32{p, toUint32(def.Value), s}
+	case "bitfield64":
+		return &tBitfield64{p, toUint64(def.Value), s}
+	case "enum16":
+		return &tEnum16{p, toUint16(def.Value), s}
+	case "enum32":
+		return &tEnum32{p, toUint32(def.Value), s}
+	case "string":
+		return &tString{p, append(make([]byte, 0, def.Size*2), toByteS(def.Value)...)}
+	case "float32":
+		return &tFloat32{p, toFloat32(def.Value)}
+	case "float64":
+		return &tFloat64{p, toFloat64(def.Value)}
+	case "ipaddr":
+		return &tIpaddr{p, [4]byte{}} // initial value ToDo
+	case "ipv6addr":
+		return &tIpv6addr{p, [16]byte{}} // initial value ToDo
+	case "eui48":
+		return &tEui48{p, [8]byte{}} // initial value ToDo
+	}
+	return nil
+}
+
 // point is internally used to build out a useable model
 type point struct {
 	name     string
-	origin   *group
+	origin   Group
 	static   bool
 	writable bool
 	address  uint16
@@ -85,7 +149,7 @@ func (pts Points) Quantity() uint16 {
 	return l
 }
 
-// Point returns the first point identified by the id from the collection.
+// Point returns the first immediate point identified by name.
 func (pts Points) Point(name string) Point {
 	for _, p := range pts {
 		if p.Name() == name {
@@ -95,8 +159,8 @@ func (pts Points) Point(name string) Point {
 	return nil
 }
 
-// Points returns a sub-collection of points identified by the given ids from the container.
-// If ids are omitted a copy of the container itself is returned.
+// Points returns all immediate points identified by names.
+// If names are omitted all points are returned.
 func (pts Points) Points(names ...string) Points {
 	if len(names) == 0 {
 		return append(Points(nil), pts...)
@@ -113,7 +177,7 @@ func (pts Points) Points(names ...string) Points {
 	return col
 }
 
-// address is internally used to get the address of a continuos collection of points.
+// address is internally used to get the address of a continuous collection of points.
 func (pts Points) address() uint16 { return pts[0].Address() }
 
 // Index returns the merged indexes of all points in the collection.
@@ -125,7 +189,7 @@ func (pts Points) Index() []Index {
 	return merge(idx)
 }
 
-// index is internally used to get the locality of a continuos collection of points.
+// index is internally used to get the locality of a continuous collection of points.
 func (pts Points) index() Index {
 	return index{address: pts.address(), quantity: pts.Quantity()}
 }
@@ -133,7 +197,7 @@ func (pts Points) index() Index {
 // decode sets the value for all points in the collection as stored in the buffer.
 func (pts Points) decode(buf []byte) error {
 	for _, p := range pts {
-		if err := p.Decode(buf); err != nil {
+		if err := p.decode(buf); err != nil {
 			return err
 		}
 		buf = buf[2*p.Quantity():]
@@ -144,7 +208,7 @@ func (pts Points) decode(buf []byte) error {
 // encode puts the values of the points in the collection into the buffer.
 func (pts Points) encode(buf []byte) error {
 	for _, p := range pts {
-		if err := p.Encode(buf); err != nil {
+		if err := p.encode(buf); err != nil {
 			return err
 		}
 		buf = buf[2*p.Quantity():]

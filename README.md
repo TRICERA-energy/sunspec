@@ -1,5 +1,9 @@
 # Sunspec
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Go Report Card](https://goreportcard.com/badge/github.com/TRICERA-energy/sunspec)](https://goreportcard.com/report/github.com/TRICERA-energy/sunspec)
+[![Go Reference](https://pkg.go.dev/badge/github.com/TRICERA-energy/sunspec.svg)](https://pkg.go.dev/github.com/TRICERA-energy/sunspec)
+
 This package provides functions and definitions for creating [sunspec](https://sunspec.org/) compliant server and client devices using the go programming language.
 
 Examples for using the package can be found [here](https://github.com/TRICERA-energy/sunspec/tree/master/examples).

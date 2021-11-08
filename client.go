@@ -7,11 +7,6 @@ import (
 	"github.com/GoAethereal/modbus"
 )
 
-// NewClient creates a new sunspec client with the given configuration.
-func NewClient(cfg Config) *Client {
-	return &Client{client: newModbusClient(cfg.Endpoint, cfg.logger()), logger: cfg.logger()}
-}
-
 // Client represents a compliant sunspec client.
 type Client struct {
 	client
@@ -22,7 +17,7 @@ type Client struct {
 var _ Device = (*Client)(nil)
 
 // Scan analyses the server retrieving its device.
-// The process uses the given defintion as reference.
+// The process uses the given definition as reference.
 func (c *Client) Scan(ctx context.Context, defs ...Definition) (err error) {
 	c.Device, err = c.scan(ctx, defs)
 	return err
