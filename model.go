@@ -120,6 +120,8 @@ func (m *model) count(c interface{}) uint16 {
 					return uint16(p.Get())
 				case Acc64:
 					return uint16(p.Get())
+				case Count:
+					return uint16(p.Get())
 				}
 			}
 		}

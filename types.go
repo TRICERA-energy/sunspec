@@ -646,6 +646,52 @@ func (t *tAcc64) Factor() int16 { return t.factor(t) }
 
 // ****************************************************************************
 
+// Count represents the sunspec type count.
+type Count interface {
+	// Point defines the generic behavior all sunspec types have in common.
+	Point
+	// Get returns the point´s underlying value.
+	Get() uint16
+}
+
+type tCount struct {
+	point
+	data uint16
+}
+
+var _ Count = (*tCount)(nil)
+
+// Valid specifies whether the underlying value is implemented by the device.
+func (t *tCount) Valid() bool { return t.Get() != 0 }
+
+// String formats the point´s value as string.
+func (t *tCount) String() string { return fmt.Sprintf("%v", t.Get()) }
+
+// Quantity returns the number of modbus registers required to store the underlying value.
+func (t *tCount) Quantity() uint16 { return 1 }
+
+// encode puts the point´s value into a buffer.
+func (t *tCount) encode(buf []byte) error {
+	binary.BigEndian.PutUint16(buf, t.Get())
+	return nil
+}
+
+// decode sets the point´s value from a buffer.
+func (t *tCount) decode(buf []byte) error {
+	return t.set(binary.BigEndian.Uint16(buf))
+}
+
+// Set sets the point´s underlying value.
+func (t *tCount) set(v uint16) error {
+	t.data = v
+	return nil
+}
+
+// Get returns the point´s underlying value.
+func (t *tCount) Get() uint16 { return t.data }
+
+// ****************************************************************************
+
 // Bitfield16 represents the sunspec type bitfield16.
 type Bitfield16 interface {
 	// Point defines the generic behavior all sunspec types have in common.

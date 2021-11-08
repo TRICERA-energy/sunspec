@@ -9,9 +9,9 @@ type Request interface {
 	Ingest() error
 	// Points returns all points that are affected by the request.
 	Points() Points
-	// Close ends the request.
+	// Flush ends the request.
 	// It is mandatory to do so after finishing the processing.
-	Close() error
+	Flush() error
 }
 
 type request struct {
@@ -37,6 +37,6 @@ func (r *request) Points() Points { return r.points.Points() }
 
 // Close ends the request.
 // It is mandatory to do so after finishing the processing.
-func (r *request) Close() error {
+func (r *request) Flush() error {
 	return r.points.encode(r.buffer)
 }

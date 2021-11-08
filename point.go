@@ -76,6 +76,8 @@ func (def *PointDef) Instance(adr uint16, o Group) Point {
 		return &tAcc32{p, toUint32(def.Value), f}
 	case "acc64":
 		return &tAcc64{p, toUint64(def.Value), f}
+	case "count":
+		return &tCount{p, toUint16(def.Value)}
 	case "bitfield16":
 		return &tBitfield16{p, toUint16(def.Value), s}
 	case "bitfield32":

@@ -32,12 +32,12 @@ func main() {
 	endpoint = fmt.Sprintf("localhost:%v", *port)
 
 	for _, model := range models {
-		var def *sunspec.ModelDef
+		var def sunspec.ModelDef
 		// unmarshal a model schema into it´s go definition
 		if err := json.Unmarshal(model, &def); err != nil {
 			logger.Fatalln(err)
 		}
-		defs = append(defs, def)
+		defs = append(defs, &def)
 	}
 
 	var wg sync.WaitGroup
@@ -61,9 +61,9 @@ func main() {
 	wg.Wait()
 }
 
-// handler gets called for any incoming sunspec request printing the points in question
+// handler gets called for any incoming sunspec request
 func handler(ctx context.Context, req sunspec.Request) error {
-	defer req.Close()
+	defer req.Flush()
 	for _, p := range req.Points() {
 		if p, ok := p.(sunspec.Float32); ok {
 			p.Set(rand.Float32())
