@@ -66,26 +66,24 @@ type client interface {
 var _ client = (*mbClient)(nil)
 
 type mbClient struct {
-	mb     modbus.Client
-	opt    modbus.Options
+	mb     *modbus.Client
 	logger Logger
 }
 
 func newModbusClient(endpoint string, l Logger) *mbClient {
 	return &mbClient{
-		mb: modbus.Client{},
-		opt: modbus.Options{
+		mb: (modbus.Config{
 			Mode:     "tcp",
 			Kind:     "tcp",
 			Endpoint: endpoint,
-		},
+		}).Client(),
 		logger: l,
 	}
 }
 
 // Connect starts the underlying server-connection.
 func (c *mbClient) Connect(ctx context.Context) error {
-	return c.mb.Connect(ctx, c.opt)
+	return c.mb.Connect(ctx)
 }
 
 // Disconnect stops the underlying server-connection.

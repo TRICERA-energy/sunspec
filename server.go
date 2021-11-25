@@ -53,54 +53,52 @@ type server interface {
 var _ server = (*mbServer)(nil)
 
 type mbServer struct {
-	mb     modbus.Server
-	opt    modbus.Options
+	mb     *modbus.Server
 	logger Logger
 }
 
 func newModbusServer(endpoint string, l Logger) *mbServer {
 	return &mbServer{
-		mb: modbus.Server{},
-		opt: modbus.Options{
+		mb: (modbus.Config{
 			Mode:     "tcp",
 			Kind:     "tcp",
 			Endpoint: endpoint,
-		},
+		}).Server(),
 		logger: l,
 	}
 }
 
 func (s *mbServer) serve(ctx context.Context, d Device, handler func(ctx context.Context, req Request) error) error {
-	return s.mb.Serve(ctx, s.opt, &modbus.Mux{
+	return s.mb.Serve(ctx, &modbus.Mux{
 		ReadHoldingRegisters: func(ctx context.Context, address, quantity uint16) (res []byte, ex modbus.Exception) {
 			s.logger.Debug("received modbus read request for address", address, "with quantity", quantity)
 			pts, err := collect(d, index{address: address, quantity: quantity})
 			if err != nil {
-				return nil, modbus.ExIllegalDataAddress
+				return nil, modbus.IllegalDataAddress
 			}
 			req := &request{points: pts, writing: false, buffer: make([]byte, 2*pts.Quantity())}
 			if err := handler(ctx, req); err != nil {
-				return nil, modbus.ExSlaveDeviceFailure
+				return nil, modbus.SlaveDeviceFailure
 			}
-			return req.buffer, nil
+			return req.buffer, 0
 		},
 		WriteMultipleRegisters: func(ctx context.Context, address uint16, values []byte) (ex modbus.Exception) {
 			s.logger.Debug("received modbus write request for address", address, "with payload", values)
 			pts, err := collect(d, index{address: address, quantity: uint16(len(values) * 2)})
 			if err != nil {
-				return modbus.ExIllegalDataAddress
+				return modbus.IllegalDataAddress
 			}
 			// ref 6.5.1 / 6.5.3: Unimplemented Registers / Writing a Read-Only Register
 			for _, p := range pts {
 				if !p.Valid() || !p.Writable() {
-					return modbus.ExIllegalDataAddress
+					return modbus.IllegalDataAddress
 				}
 			}
 			req := &request{points: pts, writing: true, buffer: values}
 			if err := handler(ctx, req); err != nil {
-				return modbus.ExSlaveDeviceFailure
+				return modbus.SlaveDeviceFailure
 			}
-			return nil
+			return 0
 		},
 	})
 }
