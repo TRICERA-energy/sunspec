@@ -28,6 +28,7 @@ sunspec.Uint64
 sunspec.Acc16
 sunspec.Acc32
 sunspec.Acc64
+sunspec.Count
 sunspec.Bitfield16
 sunspec.Bitfield32
 sunspec.Bitfield64
