@@ -1,9 +1,9 @@
 package sunspec
 
 import (
-	"context"
 	"errors"
 
+	"github.com/GoAethereal/cancel"
 	"github.com/GoAethereal/modbus"
 )
 
@@ -18,13 +18,13 @@ var _ Device = (*Client)(nil)
 
 // Scan analyses the server retrieving its device.
 // The process uses the given definition as reference.
-func (c *Client) Scan(ctx context.Context, defs ...Definition) (err error) {
+func (c *Client) Scan(ctx cancel.Context, defs ...Definition) (err error) {
 	c.Device, err = c.scan(ctx, defs)
 	return err
 }
 
 // Read requests all point values in the given address range from the server.
-func (c *Client) Read(ctx context.Context, idx ...Index) (Points, error) {
+func (c *Client) Read(ctx cancel.Context, idx ...Index) (Points, error) {
 	pts, err := collect(c, idx...)
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (c *Client) Read(ctx context.Context, idx ...Index) (Points, error) {
 
 // Write sends all point values in the given address range to the server.
 // Read-Only points are silently skipped.
-func (c *Client) Write(ctx context.Context, idx ...Index) (Points, error) {
+func (c *Client) Write(ctx cancel.Context, idx ...Index) (Points, error) {
 	pts, err := collect(c, idx...)
 	if err != nil {
 		return nil, err
@@ -55,12 +55,12 @@ func (c *Client) Write(ctx context.Context, idx ...Index) (Points, error) {
 
 type client interface {
 	// Connect starts the underlying server-connection.
-	Connect(ctx context.Context) error
+	Connect() error
 	// Disconnect stops the underlying server-connection.
 	Disconnect() error
-	scan(ctx context.Context, defs []Definition) (Device, error)
-	read(ctx context.Context, pts ...Point) (Points, error)
-	write(ctx context.Context, pts ...Point) (Points, error)
+	scan(ctx cancel.Context, defs []Definition) (Device, error)
+	read(ctx cancel.Context, pts ...Point) (Points, error)
+	write(ctx cancel.Context, pts ...Point) (Points, error)
 }
 
 var _ client = (*mbClient)(nil)
@@ -82,8 +82,8 @@ func newModbusClient(endpoint string, l Logger) *mbClient {
 }
 
 // Connect starts the underlying server-connection.
-func (c *mbClient) Connect(ctx context.Context) error {
-	return c.mb.Connect(ctx)
+func (c *mbClient) Connect() error {
+	return c.mb.Connect()
 }
 
 // Disconnect stops the underlying server-connection.
@@ -91,7 +91,7 @@ func (c *mbClient) Disconnect() error {
 	return c.mb.Disconnect()
 }
 
-func (c *mbClient) scan(ctx context.Context, defs []Definition) (Device, error) {
+func (c *mbClient) scan(ctx cancel.Context, defs []Definition) (Device, error) {
 	adr, err := c.marker(ctx)
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func (c *mbClient) scan(ctx context.Context, defs []Definition) (Device, error) 
 }
 
 // marker locates the modbus stating address of the endpoint by scanning the base addresses.
-func (c *mbClient) marker(ctx context.Context) (uint16, error) {
+func (c *mbClient) marker(ctx cancel.Context) (uint16, error) {
 	for _, adr := range [...]uint16{0, 40000, 50000} {
 		if _, err := c.read(ctx, marker(adr).Points()...); err == nil {
 			c.logger.Info("Marker located at adr: ", adr)
@@ -141,7 +141,7 @@ func (c *mbClient) marker(ctx context.Context) (uint16, error) {
 }
 
 // read attempts to request the data for all given points from the modbus endpoint.
-func (c *mbClient) read(ctx context.Context, pts ...Point) (Points, error) {
+func (c *mbClient) read(ctx cancel.Context, pts ...Point) (Points, error) {
 	return c.execute(125, pts, func(pts Points) error {
 		res, err := c.mb.ReadHoldingRegisters(ctx, pts.address(), pts.Quantity())
 		if err != nil {
@@ -152,7 +152,7 @@ func (c *mbClient) read(ctx context.Context, pts ...Point) (Points, error) {
 }
 
 // write attempts to send the point values of all given points to the modbus endpoint
-func (c *mbClient) write(ctx context.Context, pts ...Point) (Points, error) {
+func (c *mbClient) write(ctx cancel.Context, pts ...Point) (Points, error) {
 	return c.execute(123, pts, func(pts Points) error {
 		req := make([]byte, 2*pts.Quantity())
 		if err := pts.encode(req); err != nil {

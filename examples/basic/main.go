@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -11,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/GoAethereal/cancel"
 	"github.com/TRICERA-energy/sunspec"
 )
 
@@ -18,7 +18,7 @@ var port = flag.Int("Port", 1337, "Port the sunspec communication should use")
 
 var (
 	logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
-	ctx    = context.Background()
+	ctx    = cancel.New()
 )
 
 var (
@@ -62,7 +62,7 @@ func main() {
 }
 
 // handler gets called for any incoming sunspec request
-func handler(ctx context.Context, req sunspec.Request) error {
+func handler(ctx cancel.Context, req sunspec.Request) error {
 	defer req.Flush()
 	for _, p := range req.Points() {
 		if p, ok := p.(sunspec.Float32); ok {
@@ -88,7 +88,7 @@ func Client() {
 	c := (sunspec.Config{Endpoint: endpoint}).Client()
 
 	// attempt to connect to the server
-	if err := c.Connect(ctx); err != nil {
+	if err := c.Connect(); err != nil {
 		logger.Fatalln(err)
 	}
 	defer c.Disconnect()
