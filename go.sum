@@ -1,4 +1,4 @@
-github.com/GoAethereal/modbus v0.0.0-20210910112942-bb9f2b3ba8fc h1:FeoNJa+tWRvSFJWAMmuJhtXyBv9v0g63UjT81/d6hz8=
-github.com/GoAethereal/modbus v0.0.0-20210910112942-bb9f2b3ba8fc/go.mod h1:Fl/ZTS7IlzMpqZtqOtJzTZCyapx4ARcKFwXKXl6RLl0=
-github.com/GoAethereal/modbus v0.0.2 h1:H9LGaamt6psFbTLXmMsdX+9Cg2ZIWZIq4m3wMF5CMJQ=
-github.com/GoAethereal/modbus v0.0.2/go.mod h1:Fl/ZTS7IlzMpqZtqOtJzTZCyapx4ARcKFwXKXl6RLl0=
+github.com/GoAethereal/cancel v0.0.1 h1:8mnuM/kOn2ke2g7clcR/1dxe0j913sPhcLZMC1DY2Ls=
+github.com/GoAethereal/cancel v0.0.1/go.mod h1:A7xd/72lvTnxI5yEu/LPRNI3NxdfcurCxJzaQHI8fY0=
+github.com/GoAethereal/modbus v0.0.3 h1:j+nRnw/lo972ljrxveR3/mqZvI1LkhWdOPMv4PqG4cE=
+github.com/GoAethereal/modbus v0.0.3/go.mod h1:ZU7OrQlG7YxoZmYF0RQW6LFUfsw1lz2rhFScXUIfzJo=
