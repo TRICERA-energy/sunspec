@@ -62,7 +62,7 @@ func (def *PointDef) Instance(adr uint16, o Group) Point {
 		return &tInt64{p, toInt64(def.Value), f}
 	case "pad":
 		return &tPad{p}
-	case "sunnsf":
+	case "sunssf":
 		return &tSunssf{p, toInt16(def.Value)}
 	case "uint16":
 		return &tUint16{p, toUint16(def.Value), f}
