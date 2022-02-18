@@ -53,55 +53,34 @@ func (def *PointDef) Instance(adr uint16, o Group) Point {
 	for _, sym := range def.Symbols {
 		s[sym.Value] = &symbol{sym.Name, sym.Value}
 	}
-	switch def.Type {
-	case "int16":
-		return &tInt16{p, toInt16(def.Value), f}
-	case "int32":
-		return &tInt32{p, toInt32(def.Value), f}
-	case "int64":
-		return &tInt64{p, toInt64(def.Value), f}
-	case "pad":
-		return &tPad{p}
-	case "sunssf":
-		return &tSunssf{p, toInt16(def.Value)}
-	case "uint16":
-		return &tUint16{p, toUint16(def.Value), f}
-	case "uint32":
-		return &tUint32{p, toUint32(def.Value), f}
-	case "uint64":
-		return &tUint64{p, toUint64(def.Value), f}
-	case "acc16":
-		return &tAcc16{p, toUint16(def.Value), f}
-	case "acc32":
-		return &tAcc32{p, toUint32(def.Value), f}
-	case "acc64":
-		return &tAcc64{p, toUint64(def.Value), f}
-	case "count":
-		return &tCount{p, toUint16(def.Value)}
-	case "bitfield16":
-		return &tBitfield16{p, toUint16(def.Value), s}
-	case "bitfield32":
-		return &tBitfield32{p, toUint32(def.Value), s}
-	case "bitfield64":
-		return &tBitfield64{p, toUint64(def.Value), s}
-	case "enum16":
-		return &tEnum16{p, toUint16(def.Value), s}
-	case "enum32":
-		return &tEnum32{p, toUint32(def.Value), s}
-	case "string":
-		return &tString{p, append(make([]byte, 0, def.Size*2), toByteS(def.Value)...)}
-	case "float32":
-		return &tFloat32{p, toFloat32(def.Value)}
-	case "float64":
-		return &tFloat64{p, toFloat64(def.Value)}
-	case "ipaddr":
-		return &tIpaddr{p, [4]byte{}} // initial value ToDo
-	case "ipv6addr":
-		return &tIpv6addr{p, [16]byte{}} // initial value ToDo
-	case "eui48":
-		return &tEui48{p, [8]byte{}} // initial value ToDo
+
+	init := map[string]func() Point{
+		"int16":      func() Point { return &tInt16{p, toInt16(def.Value), f} },
+		"int32":      func() Point { return &tInt32{p, toInt32(def.Value), f} },
+		"int64":      func() Point { return &tInt64{p, toInt64(def.Value), f} },
+		"pad":        func() Point { return &tPad{p} },
+		"sunssf":     func() Point { return &tSunssf{p, toInt16(def.Value)} },
+		"uint16":     func() Point { return &tUint16{p, toUint16(def.Value), f} },
+		"uint32":     func() Point { return &tUint32{p, toUint32(def.Value), f} },
+		"unit64":     func() Point { return &tUint64{p, toUint64(def.Value), f} },
+		"acc16":      func() Point { return &tAcc16{p, toUint16(def.Value), f} },
+		"acc32":      func() Point { return &tAcc32{p, toUint32(def.Value), f} },
+		"acc64":      func() Point { return &tAcc64{p, toUint64(def.Value), f} },
+		"count":      func() Point { return &tCount{p, toUint16(def.Value)} },
+		"bitfield16": func() Point { return &tBitfield16{p, toUint16(def.Value), s} },
+		"bitfield32": func() Point { return &tBitfield32{p, toUint32(def.Value), s} },
+		"bitfield64": func() Point { return &tBitfield64{p, toUint64(def.Value), s} },
+		"enum16":     func() Point { return &tEnum16{p, toUint16(def.Value), s} },
+		"enum32":     func() Point { return &tEnum32{p, toUint32(def.Value), s} },
+		"string":     func() Point { return &tString{p, append(make([]byte, 0, def.Size*2), toByteS(def.Value)...)} },
+		"float32":    func() Point { return &tFloat32{p, toFloat32(def.Value)} },
+		"float64":    func() Point { return &tFloat64{p, toFloat64(def.Value)} },
+		"ipaddr":     func() Point { return &tIpaddr{p, [4]byte{}} },    // initial value ToDo
+		"ipv6addr":   func() Point { return &tIpv6addr{p, [16]byte{}} }, // initial value ToDo
+		"eui48":      func() Point { return &tEui48{p, [8]byte{}} },     // initial value ToDo
 	}
-	return nil
+
+	return init[def.Type]()
 }
 
 // point is internally used to build out a useable model
