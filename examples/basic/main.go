@@ -62,7 +62,7 @@ func main() {
 }
 
 // handler gets called for any incoming sunspec request
-func handler(ctx cancel.Context, req sunspec.Request) error {
+func handler(_ cancel.Context, req sunspec.Request) error {
 	defer req.Flush()
 	for _, p := range req.Points() {
 		if p, ok := p.(sunspec.Float32); ok {
