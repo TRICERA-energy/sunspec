@@ -295,7 +295,7 @@ func (t *tSunssf) decode(buf []byte) error {
 
 // set sets the point´s underlying value.
 func (t *tSunssf) set(v int16) error {
-	if v < -10 || v > 10 {
+	if v != -0x8000 && (v < -10 || v > 10) {
 		return errors.New("sunspec: value out of boundary")
 	}
 	t.data = v
