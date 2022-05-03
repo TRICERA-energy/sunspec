@@ -47,10 +47,11 @@ func (c *Client) Write(ctx cancel.Context, idx ...Index) (Points, error) {
 			i++
 		}
 	}
+	pts = pts[:i]
 	if len(pts) == 0 {
 		return nil, errors.New("sunspec: no writable points for given index")
 	}
-	return c.write(ctx, pts[:i]...)
+	return c.write(ctx, pts...)
 }
 
 type client interface {

@@ -83,7 +83,7 @@ func (s *mbServer) serve(ctx cancel.Context, d Device, handler func(ctx cancel.C
 		},
 		WriteMultipleRegisters: func(ctx cancel.Context, address uint16, values []byte) (ex modbus.Exception) {
 			s.logger.Debug("received modbus write request for address", address, "with payload", values)
-			pts, err := collect(d, index{address: address, quantity: uint16(len(values) * 2)})
+			pts, err := collect(d, index{address: address, quantity: uint16(len(values) / 2)})
 			if err != nil {
 				return modbus.IllegalDataAddress
 			}

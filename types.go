@@ -1100,7 +1100,8 @@ func (t *tString) decode(buf []byte) error {
 
 // Set sets the point´s underlying value.
 func (t *tString) Set(v string) error {
-	copy(t.data[:cap(t.data)], v)
+	t.data = t.data[:cap(t.data)]
+	copy(t.data, v)
 	return nil
 }
 
