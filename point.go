@@ -62,7 +62,7 @@ func (def *PointDef) Instance(adr uint16, o Group) Point {
 		"sunssf":     func() Point { return &tSunssf{p, toInt16(def.Value)} },
 		"uint16":     func() Point { return &tUint16{p, toUint16(def.Value), f} },
 		"uint32":     func() Point { return &tUint32{p, toUint32(def.Value), f} },
-		"unit64":     func() Point { return &tUint64{p, toUint64(def.Value), f} },
+		"uint64":     func() Point { return &tUint64{p, toUint64(def.Value), f} },
 		"acc16":      func() Point { return &tAcc16{p, toUint16(def.Value), f} },
 		"acc32":      func() Point { return &tAcc32{p, toUint32(def.Value), f} },
 		"acc64":      func() Point { return &tAcc64{p, toUint64(def.Value), f} },
