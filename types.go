@@ -1176,7 +1176,7 @@ type tFloat64 struct {
 var _ Float64 = (*tFloat64)(nil)
 
 // Valid specifies whether the underlying value is implemented by the device.
-func (t *tFloat64) Valid() bool { return t.Get() != 0x7FC00000 }
+func (t *tFloat64) Valid() bool { return t.Get() != 0x7FF8000000000000 }
 
 // String formats the point´s value as string.
 func (t *tFloat64) String() string { return fmt.Sprintf("%v", t.Get()) }
