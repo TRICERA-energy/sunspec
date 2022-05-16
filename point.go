@@ -22,22 +22,30 @@ type Point interface {
 
 // PointDef is the definition of a sunspec point element.
 type PointDef struct {
+	Meta
 	Name        string      `json:"name"`
 	Type        string      `json:"type"`
 	Value       interface{} `json:"value,omitempty"`
 	Count       interface{} `json:"count,omitempty"`
-	Size        uint16      `json:"size"`
+	Size        uint16      `json:"size,omitempty"`
 	ScaleFactor interface{} `json:"sf,omitempty"`
 	Units       string      `json:"units,omitempty"`
 	Writable    writable    `json:"access,omitempty"`
 	Mandatory   mandatory   `json:"mandatory,omitempty"`
 	Static      static      `json:"static,omitempty"`
-	Label       string      `json:"label,omitempty"`
-	Description string      `json:"desc,omitempty"`
-	Detail      string      `json:"detail,omitempty"`
-	Notes       string      `json:"notes,omitempty"`
-	Comments    []string    `json:"comments,omitempty"`
 	Symbols     []SymbolDef `json:"symbols,omitempty"`
+}
+
+func (def *PointDef) Simplify() {
+	def.Meta.Simplify()
+	def.Units = ""
+	def.Mandatory = false
+	if def.Type != "string" {
+		def.Size = 0
+	}
+	for i := range def.Symbols {
+		def.Symbols[i].Simplify()
+	}
 }
 
 func (def *PointDef) Instance(adr uint16, o Group) Point {

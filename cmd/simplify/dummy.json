@@ -1,0 +1,65 @@
+[
+	{
+		"id": 1,
+		"group": {
+			"name": "common",
+			"type": "group",
+			"count": null,
+			"points": [
+				{
+					"name": "ID",
+					"type": "uint16",
+					"value": 1,
+					"static": "S"
+				},
+				{
+					"name": "L",
+					"type": "uint16",
+					"static": "S"
+				},
+				{
+					"name": "Mn",
+					"type": "string",
+					"count": "x",
+					"size": 16,
+					"static": "S"
+				},
+				{
+					"name": "Md",
+					"type": "string",
+					"size": 16,
+					"static": "S"
+				},
+				{
+					"name": "Opt",
+					"type": "string",
+					"size": 8,
+					"static": "S"
+				},
+				{
+					"name": "Vr",
+					"type": "string",
+					"size": 8,
+					"static": "S"
+				},
+				{
+					"name": "SN",
+					"type": "string",
+					"size": 16,
+					"static": "S"
+				},
+				{
+					"name": "DA",
+					"type": "uint16",
+					"access": "RW"
+				},
+				{
+					"name": "Pad",
+					"type": "pad",
+					"static": "S"
+				}
+			],
+			"groups": null
+		}
+	}
+]

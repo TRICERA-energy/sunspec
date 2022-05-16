@@ -25,13 +25,14 @@ type Definition interface {
 
 // ModelDef is the definition of a sunspec Model.
 type ModelDef struct {
-	Id          uint16   `json:"id"`
-	Group       GroupDef `json:"group"`
-	Label       string   `json:"label,omitempty"`
-	Description string   `json:"desc,omitempty"`
-	Detail      string   `json:"detail,omitempty"`
-	Notes       string   `json:"notes,omitempty"`
-	Comments    []string `json:"comments,omitempty"`
+	Meta
+	Id    uint16   `json:"id"`
+	Group GroupDef `json:"group"`
+}
+
+func (def *ModelDef) Simplify() {
+	def.Meta.Simplify()
+	def.Group.Simplify()
 }
 
 var _ Definition = (*ModelDef)(nil)

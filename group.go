@@ -24,16 +24,22 @@ type Group interface {
 
 // GroupDef is the definition of a sunspec Group element.
 type GroupDef struct {
-	Name        string      `json:"name"`
-	Atomic      atomic      `json:"type"`
-	Count       interface{} `json:"count"`
-	Points      []PointDef  `json:"points"`
-	Groups      []GroupDef  `json:"groups"`
-	Label       string      `json:"label,omitempty"`
-	Description string      `json:"desc,omitempty"`
-	Detail      string      `json:"detail,omitempty"`
-	Notes       string      `json:"notes,omitempty"`
-	Comments    []string    `json:"comments,omitempty"`
+	Meta
+	Name   string      `json:"name"`
+	Atomic atomic      `json:"type"`
+	Count  interface{} `json:"count"`
+	Points []PointDef  `json:"points"`
+	Groups []GroupDef  `json:"groups"`
+}
+
+func (def *GroupDef) Simplify() {
+	def.Meta.Simplify()
+	for i := range def.Points {
+		def.Points[i].Simplify()
+	}
+	for i := range def.Groups {
+		def.Groups[i].Simplify()
+	}
 }
 
 // iterate executes callback recursively for group g and all its sub-groups.

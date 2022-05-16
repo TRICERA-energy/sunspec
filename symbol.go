@@ -8,13 +8,13 @@ type Symbol interface {
 
 // SymbolDef is the definition of a sunspec symbol element.
 type SymbolDef struct {
-	Name        string   `json:"name"`
-	Value       uint32   `json:"value"`
-	Label       string   `json:"label,omitempty"`
-	Description string   `json:"desc,omitempty"`
-	Detail      string   `json:"detail,omitempty"`
-	Notes       string   `json:"notes,omitempty"`
-	Comments    []string `json:"comments,omitempty"`
+	Meta
+	Name  string `json:"name"`
+	Value uint32 `json:"value"`
+}
+
+func (def *SymbolDef) Simplify() {
+	def.Meta.Simplify()
 }
 
 type symbol struct {
