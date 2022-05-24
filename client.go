@@ -77,6 +77,7 @@ func newModbusClient(endpoint string, l Logger) *mbClient {
 			Mode:     "tcp",
 			Kind:     "tcp",
 			Endpoint: endpoint,
+			UnitID:   1,
 		}).Client(),
 		logger: l,
 	}
