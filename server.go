@@ -36,7 +36,7 @@ func (s *Server) Serve(ctx cancel.Context, handler func(ctx cancel.Context, req 
 		adr = ceil(m)
 		s.models = append(s.models, m)
 	}
-	// append the endmarker
+	// append the end-marker
 	s.models = append(s.models, header(adr, 0xFFFF, 0))
 
 	return s.serve(ctx, s.models, handler)

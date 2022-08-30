@@ -11,7 +11,6 @@ import (
 type Client struct {
 	client
 	Device
-	logger Logger
 }
 
 var _ Device = (*Client)(nil)
