@@ -9,7 +9,6 @@ import (
 type Server struct {
 	server
 	models Models
-	logger Logger
 }
 
 var _ Device = (*Server)(nil)
@@ -27,12 +26,10 @@ func (s *Server) Serve(ctx cancel.Context, handler func(ctx cancel.Context, req 
 	s.models = append(Models(nil), marker(0))
 	adr := ceil(s.models.First())
 	for _, def := range defs {
-		s.logger.Info("instantiating model definition", def.ID(), "at address", adr)
 		m, err := def.Instance(adr, func(pts []Point) error { return nil })
 		if err != nil {
 			return err
 		}
-		s.logger.Info("verifying model", def.ID())
 		if err := Verify(m); err != nil {
 			return err
 		}
@@ -52,26 +49,22 @@ type server interface {
 var _ server = (*mbServer)(nil)
 
 type mbServer struct {
-	mb     *modbus.Server
-	logger Logger
+	modbus.Server
 }
 
-func newModbusServer(endpoint string, l Logger) *mbServer {
+func newModbusServer(endpoint string) *mbServer {
 	return &mbServer{
-		mb: (modbus.Config{
+		Server: modbus.Server{Config: modbus.Config{
 			Mode:     "tcp",
 			Kind:     "tcp",
 			Endpoint: endpoint,
-			UnitID:   1,
-		}).Server(),
-		logger: l,
+		}},
 	}
 }
 
 func (s *mbServer) serve(ctx cancel.Context, d Device, handler func(ctx cancel.Context, req Request) error) error {
-	return s.mb.Serve(ctx, &modbus.Mux{
+	return s.Serve(ctx, &modbus.Mux{
 		ReadHoldingRegisters: func(ctx cancel.Context, address, quantity uint16) (res []byte, ex modbus.Exception) {
-			s.logger.Debug("received modbus read request for address", address, "with quantity", quantity)
 			pts, err := collect(d, index{address: address, quantity: quantity})
 			if err != nil {
 				return nil, modbus.IllegalDataAddress
@@ -83,7 +76,6 @@ func (s *mbServer) serve(ctx cancel.Context, d Device, handler func(ctx cancel.C
 			return req.buffer, 0
 		},
 		WriteMultipleRegisters: func(ctx cancel.Context, address uint16, values []byte) (ex modbus.Exception) {
-			s.logger.Debug("received modbus write request for address", address, "with payload", values)
 			pts, err := collect(d, index{address: address, quantity: uint16(len(values) / 2)})
 			if err != nil {
 				return modbus.IllegalDataAddress
