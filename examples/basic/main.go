@@ -86,13 +86,9 @@ func Server() {
 func Client() {
 	// create a new client requesting data from the server
 	c := (sunspec.Config{Endpoint: endpoint}).Client()
-
-	// attempt to connect to the server
-	if err := c.Connect(); err != nil {
-		logger.Fatalln(err)
-	}
 	defer c.Disconnect()
 
+	time.Sleep(1 * time.Second)
 	// scan the endpoint retrieving all models
 	if err := c.Scan(ctx, defs...); err != nil {
 		logger.Fatalln("Read error:", err)

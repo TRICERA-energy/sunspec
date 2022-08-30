@@ -56,9 +56,9 @@ func (c *Client) Write(ctx cancel.Context, idx ...Index) (Points, error) {
 
 type client interface {
 	// Connect starts the underlying server-connection.
-	Connect() error
+	Ready() bool
 	// Disconnect stops the underlying server-connection.
-	Disconnect() error
+	Disconnect()
 	scan(ctx cancel.Context, defs []Definition) (Device, error)
 	read(ctx cancel.Context, pts ...Point) (Points, error)
 	write(ctx cancel.Context, pts ...Point) (Points, error)
@@ -67,30 +67,17 @@ type client interface {
 var _ client = (*mbClient)(nil)
 
 type mbClient struct {
-	mb     *modbus.Client
-	logger Logger
+	modbus.Client
 }
 
-func newModbusClient(endpoint string, l Logger) *mbClient {
+func newModbusClient(endpoint string) *mbClient {
 	return &mbClient{
-		mb: (modbus.Config{
+		Client: modbus.Client{Config: modbus.Config{
 			Mode:     "tcp",
 			Kind:     "tcp",
 			Endpoint: endpoint,
-			UnitID:   1,
-		}).Client(),
-		logger: l,
+		}},
 	}
-}
-
-// Connect starts the underlying server-connection.
-func (c *mbClient) Connect() error {
-	return c.mb.Connect()
-}
-
-// Disconnect stops the underlying server-connection.
-func (c *mbClient) Disconnect() error {
-	return c.mb.Disconnect()
 }
 
 func (c *mbClient) scan(ctx cancel.Context, defs []Definition) (Device, error) {
@@ -135,7 +122,6 @@ func (c *mbClient) scan(ctx cancel.Context, defs []Definition) (Device, error) {
 func (c *mbClient) marker(ctx cancel.Context) (uint16, error) {
 	for _, adr := range [...]uint16{0, 40000, 50000} {
 		if _, err := c.read(ctx, marker(adr).Points()...); err == nil {
-			c.logger.Info("Marker located at adr: ", adr)
 			return adr, nil
 		}
 	}
@@ -145,7 +131,7 @@ func (c *mbClient) marker(ctx cancel.Context) (uint16, error) {
 // read attempts to request the data for all given points from the modbus endpoint.
 func (c *mbClient) read(ctx cancel.Context, pts ...Point) (Points, error) {
 	return c.execute(125, pts, func(pts Points) error {
-		res, err := c.mb.ReadHoldingRegisters(ctx, pts.address(), pts.Quantity())
+		res, err := c.ReadHoldingRegisters(ctx, pts.address(), pts.Quantity())
 		if err != nil {
 			return err
 		}
@@ -160,7 +146,7 @@ func (c *mbClient) write(ctx cancel.Context, pts ...Point) (Points, error) {
 		if err := pts.encode(req); err != nil {
 			return err
 		}
-		return c.mb.WriteMultipleRegisters(ctx, pts.address(), req)
+		return c.WriteMultipleRegisters(ctx, pts.address(), req)
 	})
 }
 
