@@ -130,7 +130,7 @@ func (c *mbClient) marker(ctx cancel.Context) (uint16, error) {
 // read attempts to request the data for all given points from the modbus endpoint.
 func (c *mbClient) read(ctx cancel.Context, pts ...Point) (Points, error) {
 	return c.execute(125, pts, func(pts Points) error {
-		res, err := c.ReadHoldingRegisters(ctx, pts.address(), pts.Quantity())
+		res, err := c.ReadHoldingRegisters(ctx, 1, pts.address(), pts.Quantity())
 		if err != nil {
 			return err
 		}
@@ -145,13 +145,14 @@ func (c *mbClient) write(ctx cancel.Context, pts ...Point) (Points, error) {
 		if err := pts.encode(req); err != nil {
 			return err
 		}
-		return c.WriteMultipleRegisters(ctx, pts.address(), req)
+		return c.WriteMultipleRegisters(ctx, 1, pts.address(), req)
 	})
 }
 
 // execute calls back cmd for all given points.
 // The input collection is split in regards to their modbus continuity limited by the given register limit.
-// 	ToDo: still needs handling for sync groups
+//
+//	ToDo: still needs handling for sync groups
 func (c *mbClient) execute(limit uint16, pts Points, cmd func(pts Points) error) (Points, error) {
 	for i, j, l := 1, 0, len(pts); j < l; j = i {
 		for _, p := range pts[i:] {

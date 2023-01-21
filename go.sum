@@ -1,4 +1,4 @@
 github.com/GoAethereal/cancel v0.0.2 h1:6PxQ/YqYofqdj46di014aIInf/RyfHnDBXlVp9kP8So=
 github.com/GoAethereal/cancel v0.0.2/go.mod h1:A7xd/72lvTnxI5yEu/LPRNI3NxdfcurCxJzaQHI8fY0=
-github.com/GoAethereal/modbus v0.0.8 h1:zker+xNCZBfuMyv4vOlWqV59oaYSE26QimRe/7KMeR0=
-github.com/GoAethereal/modbus v0.0.8/go.mod h1:6iOFQVY484baAAVI4M07zRoKq9IsydbgYV0KxE16cFM=
+github.com/GoAethereal/modbus v0.0.9 h1:bB5UQOZ7mxyx1ZOWd8Tqg9p7yvaallGu4rx68nREtjc=
+github.com/GoAethereal/modbus v0.0.9/go.mod h1:6iOFQVY484baAAVI4M07zRoKq9IsydbgYV0KxE16cFM=

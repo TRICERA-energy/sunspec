@@ -64,7 +64,7 @@ func newModbusServer(endpoint string) *mbServer {
 
 func (s *mbServer) serve(ctx cancel.Context, d Device, handler func(ctx cancel.Context, req Request) error) error {
 	return s.Serve(ctx, &modbus.Mux{
-		ReadHoldingRegisters: func(ctx cancel.Context, address, quantity uint16) (res []byte, ex modbus.Exception) {
+		ReadHoldingRegisters: func(ctx cancel.Context, _ byte, address, quantity uint16) (res []byte, ex modbus.Exception) {
 			pts, err := collect(d, index{address: address, quantity: quantity})
 			if err != nil {
 				return nil, modbus.IllegalDataAddress
@@ -75,7 +75,7 @@ func (s *mbServer) serve(ctx cancel.Context, d Device, handler func(ctx cancel.C
 			}
 			return req.buffer, 0
 		},
-		WriteMultipleRegisters: func(ctx cancel.Context, address uint16, values []byte) (ex modbus.Exception) {
+		WriteMultipleRegisters: func(ctx cancel.Context, _ byte, address uint16, values []byte) (ex modbus.Exception) {
 			pts, err := collect(d, index{address: address, quantity: uint16(len(values) / 2)})
 			if err != nil {
 				return modbus.IllegalDataAddress
